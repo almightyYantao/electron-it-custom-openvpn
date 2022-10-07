@@ -1,0 +1,140 @@
+.vpn-top-tool {
+    height: 50px;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.vpn-top-tool .button {
+    color: var(--ant-primary-color);
+}
+
+.vpn-top-tool .dropDown {
+    width: 200px;
+}
+
+.vpn-main-body {
+    height: calc(100vh - 120px);
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.vpn-top-tool-config {
+    width: 200px;
+}
+
+.vpn-main-body .circle {
+    width: 150px;
+    height: 150px;
+    /* background-image: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%); */
+    background-image: linear-gradient(to top, #48c6ef 0%, #6f86d6 100%);
+    border-radius: 50%;
+}
+
+.vpn-main-body .circle-success {
+    background-image: linear-gradient(to right, #92fe9d 0%, #00c9ff 100%);
+}
+
+.vpn-main-body .circleTwo {
+    width: 130px;
+    height: 130px;
+    margin-left: -140px;
+    /* background-color: #fff; */
+    background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vpn-footer {
+    height: 50px;
+    background-color: aquamarine;
+}
+
+.connect-status {
+    display: none;
+}
+
+.connect-status-ing {
+    display: inline;
+    color: #fff;
+}
+
+.connect-status-ing:nth-child(2) {
+    animation: xdian1 2.5s both linear infinite;
+}
+
+.connect-status-ing:nth-child(3) {
+    animation: xdian2 2.5s both linear infinite;
+}
+
+.connect-status-ing:nth-child(4) {
+    animation: xdian3 2.5s both linear infinite;
+}
+
+@keyframes xdian1 {
+
+    0% {
+        color: #000;
+    }
+
+    33% {
+        color: none;
+    }
+
+    68% {
+        color: none;
+    }
+
+    100% {
+        color: none;
+    }
+
+}
+
+
+@keyframes xdian2 {
+
+    0% {
+        color: none;
+    }
+
+    33% {
+        color: #000;
+    }
+
+    68% {
+        color: none;
+    }
+
+    100% {
+        color: none;
+    }
+
+}
+
+
+@keyframes xdian3 {
+
+    0% {
+        color: none;
+    }
+
+    33% {
+        color: none;
+    }
+
+    68% {
+        color: #000;
+    }
+
+    100% {
+        color: none;
+    }
+
+}
