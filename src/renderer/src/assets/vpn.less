@@ -15,7 +15,7 @@
 }
 
 .vpn-main-body {
-    height: calc(100vh - 120px);
+    height: calc(100vh - 140px);
     width: 100%;
     display: inline-flex;
     align-items: center;
@@ -42,7 +42,7 @@
 .vpn-main-body .circleTwo {
     width: 130px;
     height: 130px;
-    margin-left: -140px;
+    margin: 10px 0 0 10px;
     /* background-color: #fff; */
     background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
     border-radius: 50%;
@@ -75,6 +75,10 @@
 
 .connect-status-ing:nth-child(4) {
     animation: xdian3 2.5s both linear infinite;
+}
+
+.connect-status-ing:nth-child(5) {
+    animation: xdian4 2.5s both linear infinite;
 }
 
 @keyframes xdian1 {
@@ -135,6 +139,26 @@
 
     100% {
         color: none;
+    }
+
+}
+
+@keyframes xdian4 {
+
+    0% {
+        color: none;
+    }
+
+    33% {
+        color: none;
+    }
+
+    68% {
+        color: none;
+    }
+
+    100% {
+        color: #000;
     }
 
 }

@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 require('@electron/remote/main').initialize()
+import './common/event'
 
 function createWindow(): void {
   // Create the browser window.
@@ -10,6 +11,12 @@ function createWindow(): void {
     height: 720,
     show: false,
     autoHideMenuBar: true,
+    frame: false,
+    titleBarStyle: 'hidden', // mac设置控制按钮在无边框窗口中的位置。
+    trafficLightPosition: { x: 12, y: 18 },
+    // 在windows上，设置默认显示窗口控制工具
+    titleBarOverlay: { color: '#fff', symbolColor: 'black' },
+    resizable: false,
     ...(process.platform === 'linux'
       ? {
           icon: path.join(__dirname, '../../build/icon.png')

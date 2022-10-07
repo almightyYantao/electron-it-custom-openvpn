@@ -2,20 +2,25 @@
 import { Config, getConfigList } from '@renderer/api/vpnConfig'
 import { Button, Space, Select } from 'antd'
 import { useEffect, useState } from 'react'
-import db from '../../store/vpn'
+import { databaseSet } from '../../common/dbEvent'
 import '../../assets/vpn.less'
+import { useTranslation } from 'react-i18next'
 
 const { Option } = Select
 
 function VPN(): JSX.Element {
   const [configs, setConfigs] = useState<Config[]>()
   const [useConfig, setUseConfig] = useState('')
+  const [title, setTitle] = useState()
+  const [connectStatus, setConnectStatus] = useState(false)
+  const [connectingClass, setConnectingClass] = useState('connect-status')
 
   /**
    * 获取配置文件
    * @param ldap 花名LDAP
    */
   const getConfig = (ldap: string, name: string) => {
+    console.log(name)
     setUseConfig(name)
     getConfigList(ldap).then((response: any) => {
       const res = response as Config[]
@@ -33,24 +38,60 @@ function VPN(): JSX.Element {
   const configOnChange = (value: string) => {
     console.log(`selected ${value}`)
     setUseConfig(value)
-    // setConnectConfig(value)
-    db.read().set('configValue', value)
-    // getConnectConfig(value, 0)
+    databaseSet('dbSet-connectConfig', { configValue: value })
   }
 
   /**
    * 初始化组件
    */
   useEffect(() => {
-    getConfig('yantao', db.read().get('configValue'))
+    // 获取上一次连接的配置文件
+    window.electron.ipcRenderer.send('vpnDbGet', 'configValue')
+    window.electron.ipcRenderer.once('vpnDbGet-configValue', (_event: Event, arg: string) => {
+      getConfig('yantao', arg)
+    })
+    setTitle(t('vpn.connect.title'))
+
+    // 获取当前VPN状态
+    window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus')
+    window.electron.ipcRenderer.once('vpnDbGet-connectStatus', (_event: Event, arg: boolean) => {
+      console.log(arg)
+      setConnectStatus(arg)
+    })
   }, [])
+
+  /**
+   * 引入国际化
+   */
+  const { t } = useTranslation()
+
+  /**
+   * 连接VPN
+   */
+  const startVpn = () => {
+    setConnectingClass(connectingClass + ' connect-status-ing')
+    setConnectStatus(true)
+    setTitle(t('vpn.connect.connecting'))
+    setTimeout(() => {
+      closeVpn()
+    }, 10000)
+  }
+
+  /**
+   * 断开VPN
+   */
+  const closeVpn = () => {
+    setConnectingClass('connect-status')
+    setConnectStatus(false)
+    setTitle(t('vpn.connect.title'))
+  }
 
   return (
     <div className="content">
       <div className="vpn-top-tool">
         <Space className="button">
-          <Button type="primary">Primary Button</Button>
-          <Button type="primary">Primary Button</Button>
+          <Button type="primary">{t('vpn.downlog')}</Button>
+          <Button type="primary">{t('vpn.network.check')}</Button>
         </Space>
         <div>
           <Select value={useConfig} onChange={configOnChange} className="vpn-top-tool-config">
@@ -65,12 +106,14 @@ function VPN(): JSX.Element {
         </div>
       </div>
       <div className="vpn-main-body">
-        <div className="circle"></div>
-        <div className="circleTwo">
-          <span>开始连接</span>
-          <span className="connect-status">.</span>
-          <span className="connect-status">.</span>
-          <span className="connect-status">.</span>
+        <div className="circle" onClick={startVpn}>
+          <div className="circleTwo">
+            <span>{title}</span>
+            <span className={connectingClass}>.</span>
+            <span className={connectingClass}>.</span>
+            <span className={connectingClass}>.</span>
+            <span className={connectingClass}>.</span>
+          </div>
         </div>
       </div>
       <div className="vpn-footer"></div>
