@@ -1,17 +1,20 @@
-import { Low, JSONFile } from 'lowdb'
+// import lowdb from 'lowdb'
+// import * as FileAsync from 'lowdb/adapters/FileAsync'
 const { app } = require('electron')
 const path = require('path')
 const STORE_PATH = app.getPath('userData')
+const low = require('lowdb')
+const FileSync = require('lowdb/adapters/FileSync')
 
-export interface ConfigValue {
-  configValue: string
-  connectStaus?: boolean
+// const adapter = new FileSync('db.json') // 存储到db.json文件中
+// const db = low(adapter)
+export type ConfigValue = {
+  configValue?: string
+  connectStatus?: boolean
+  vpnPort?: number
 }
 
 // 初始化lowdb读写的json文件名以及存储路径
-const adapter = new JSONFile<ConfigValue>(path.join(STORE_PATH, '/vpn.json'))
-console.log(path.join(STORE_PATH, '/vpn.json'))
-const db = new Low(adapter)
-// 这里要把原来的数据读取出来，要不然返回的是一个空对象
-db.read()
+const adapter = new FileSync(path.join(STORE_PATH, '/vpn.json'))
+const db = low(adapter)
 export default db

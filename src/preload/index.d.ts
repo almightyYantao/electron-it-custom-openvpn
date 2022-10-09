@@ -6,3 +6,5 @@ declare global {
     api: unknown
   }
 }
+
+declare module 'node-cmd'

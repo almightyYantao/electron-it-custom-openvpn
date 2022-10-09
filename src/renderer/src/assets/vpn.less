@@ -21,6 +21,13 @@
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
+    flex-direction: column;
+}
+
+.connecting-log {
+    margin: 10px 0;
+    overflow: hidden;
+    height: 20px;
 }
 
 .vpn-top-tool-config {
@@ -33,10 +40,84 @@
     /* background-image: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%); */
     background-image: linear-gradient(to top, #48c6ef 0%, #6f86d6 100%);
     border-radius: 50%;
+    box-shadow: 2px 2px 10px #e3e3e3;
 }
 
 .vpn-main-body .circle-success {
     background-image: linear-gradient(to right, #92fe9d 0%, #00c9ff 100%);
+    animation: vpnSuccessMove 1s forwards;
+}
+
+@keyframes vpnSuccessMove {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-120px);
+    }
+}
+
+.vpn-main-body .vpn-body-nav {
+    position: absolute;
+    height: 250px;
+    bottom: 0px;
+    width: calc(100vw - 100px - 20px);
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 2px 2px 10px #e3e3e3;
+    animation: vpnBodyNav 1s forwards;
+    display: inline-flex;
+    flex-flow: column;
+}
+
+.vpn-main-body .vpn-body-nav .vpn-body-nav-title {
+    color: #000;
+    font-size: 1.6em;
+    width: 100px;
+    height: 20px;
+    margin: 20px 0 0 20px;
+}
+
+.vpn-main-body .vpn-body-nav .vpn-body-nav-info {
+    display: inline-flex;
+    flex-wrap: wrap;
+    padding: 35px 20px 20px 20px;
+    height: 150px;
+}
+
+@keyframes vpnBodyNav {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-80px);
+    }
+}
+
+.vpn-main-body .vpn-body-nav .vpn-body-nav-info .vpn-body-nav-item {
+    height: 30px;
+    line-height: 30px;
+    width: 180px;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 2px 2px 10px #e3e3e3;
+    margin: 10px 20px 0 0;
+    padding: 0;
+}
+
+.vpn-main-body .vpn-body-nav .vpn-body-nav-info .vpn-body-nav-item .vpn-body-nav-item-icon {
+    float: left;
+    height: 30px;
+    line-height: 30px;
+    width: 35px;
+    text-align: center;
+    padding: 0 10px;
+    margin-right: 5px;
+    background-color: var(--ant-primary-color);
+    color: #fff;
+    border-radius: 10px;
 }
 
 .vpn-main-body .circleTwo {

@@ -3,17 +3,19 @@ import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 require('@electron/remote/main').initialize()
 import './common/event'
-
+import './module/openvpn'
+import db from './store/config'
+let mainWindow: BrowserWindow
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
     show: false,
     autoHideMenuBar: true,
     frame: false,
     titleBarStyle: 'hidden', // mac设置控制按钮在无边框窗口中的位置。
-    trafficLightPosition: { x: 12, y: 18 },
+    trafficLightPosition: { x: 12, y: 6 },
     // 在windows上，设置默认显示窗口控制工具
     titleBarOverlay: { color: '#fff', symbolColor: 'black' },
     resizable: false,
@@ -30,6 +32,8 @@ function createWindow(): void {
       contextIsolation: false
     }
   })
+
+  global.mainWindow = mainWindow
 
   require('@electron/remote/main').enable(mainWindow.webContents)
 
@@ -65,6 +69,15 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
   createWindow()
+  // 初始化基础配置
+  db.defaults({
+    appPath: path.join(
+      app.getAppPath().replace(/\\/g, '\\\\').replace('\\\\app.asar', '').replace('/app.asar', ''),
+      '/static'
+    ),
+    staticPath: path.join(__dirname, '/static').replace(/\\/g, '\\\\'),
+    version: app.getVersion()
+  }).write()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

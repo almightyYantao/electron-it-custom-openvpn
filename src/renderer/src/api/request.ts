@@ -160,8 +160,7 @@ export default function (fecth: any, url: any, param?: Object): Promise<unknown>
 }
 
 //失败提示
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function msag(err: any) {
+function msag(err: any): void {
   if (err && err.response) {
     switch (err.response.status) {
       case 400:
@@ -170,7 +169,6 @@ function msag(err: any) {
       case 401:
         alert('未授权，请登录')
         break
-
       case 403:
         alert('拒绝访问')
         break

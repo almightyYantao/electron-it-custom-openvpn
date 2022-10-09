@@ -1,19 +1,29 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Config, getConfigList } from '@renderer/api/vpnConfig'
-import { Button, Space, Select } from 'antd'
+import { Button, Space, Select, Modal } from 'antd'
 import { useEffect, useState } from 'react'
-import { databaseSet } from '../../common/dbEvent'
-import '../../assets/vpn.less'
+import { databaseSet } from '@renderer/common/dbEvent'
+import '@renderer/assets/vpn.less'
 import { useTranslation } from 'react-i18next'
 
 const { Option } = Select
+
+type NavList = {
+  name: string
+  icon?: string
+  url: string
+}
 
 function VPN(): JSX.Element {
   const [configs, setConfigs] = useState<Config[]>()
   const [useConfig, setUseConfig] = useState('')
   const [title, setTitle] = useState()
   const [connectStatus, setConnectStatus] = useState(false)
+  const [connectingStatus, setConnectingStatus] = useState(false)
   const [connectingClass, setConnectingClass] = useState('connect-status')
+  const [connectClass, setConnectCLass] = useState('circle')
+  const [connectingLog, setConnectingLog] = useState('')
+  const [nav, setNav] = useState<NavList[]>()
 
   /**
    * 获取配置文件
@@ -38,7 +48,7 @@ function VPN(): JSX.Element {
   const configOnChange = (value: string) => {
     console.log(`selected ${value}`)
     setUseConfig(value)
-    databaseSet('dbSet-connectConfig', { configValue: value })
+    window.electron.ipcRenderer.send('vpnDbSet', 'configValue', value)
   }
 
   /**
@@ -51,13 +61,55 @@ function VPN(): JSX.Element {
       getConfig('yantao', arg)
     })
     setTitle(t('vpn.connect.title'))
-
+    setNav([
+      {
+        name: 'confluence',
+        url: 'https://cf.qunhequnhe.com'
+      },
+      {
+        name: '核伙人门户',
+        url: 'https://coreland.qunhequnhe.com'
+      },
+      {
+        name: '任务中心',
+        url: 'https://coreland.qunhequnhe.com/task?id=initiate'
+      },
+      {
+        name: 'OKR',
+        url: 'https://okr-web.qunhequnhe.com'
+      },
+      {
+        name: 'Kaptain',
+        url: 'https://kaptain.qunhequnhe.com/'
+      },
+      {
+        name: 'nextCloud',
+        url: 'https://nextcloud.qunhequnhe.com/'
+      },
+      {
+        name: '数据小站',
+        url: 'https://tesseract.qunhequnhe.com/'
+      },
+      {
+        name: '运营云台',
+        url: 'https://yuntai.qunhequnhe.com/#/home'
+      },
+      {
+        name: 'KuBOSS',
+        url: 'https://salesplatform.kujiale.com/workbench/#/workbench/index'
+      }
+    ])
     // 获取当前VPN状态
-    window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus')
-    window.electron.ipcRenderer.once('vpnDbGet-connectStatus', (_event: Event, arg: boolean) => {
-      console.log(arg)
-      setConnectStatus(arg)
-    })
+    window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.status')
+    window.electron.ipcRenderer.once(
+      'vpnDbGet-connectStatus.status',
+      (_event: Event, arg: boolean) => {
+        console.log(arg)
+        if (arg === true) {
+          setSuccessStatus()
+        }
+      }
+    )
   }, [])
 
   /**
@@ -66,15 +118,52 @@ function VPN(): JSX.Element {
   const { t } = useTranslation()
 
   /**
-   * 连接VPN
+   * VPN总启动方式
    */
   const startVpn = () => {
-    setConnectingClass(connectingClass + ' connect-status-ing')
-    setConnectStatus(true)
-    setTitle(t('vpn.connect.connecting'))
-    setTimeout(() => {
+    if (connectStatus === true || connectingStatus === true) {
       closeVpn()
-    }, 10000)
+    } else {
+      connectVpn()
+    }
+  }
+
+  /**
+   * 连接VPN
+   */
+  const connectVpn = () => {
+    setConnectingClass(connectingClass + ' connect-status-ing')
+    setConnectingStatus(true)
+    setTitle(t('vpn.connect.connecting'))
+    window.electron.ipcRenderer.send('openvpn-start')
+    window.electron.ipcRenderer.once('openvpn-start-status', (_event: Event, arg: any) => {
+      const status = arg.status
+      const remark = arg.remark
+      if (status == true) {
+        setSuccessStatus()
+      } else {
+        Modal.error({
+          title: 'VPN Connect Error',
+          content: remark
+        })
+        closeVpn()
+      }
+    })
+    window.electron.ipcRenderer.on('setConnectingLog', (_event: Event, arg: string) => {
+      setConnectingLog(arg)
+    })
+  }
+
+  /**
+   * 设置连接成功状态
+   */
+  const setSuccessStatus = () => {
+    setConnectStatus(true)
+    setTitle(t('vpn.connect.closeVpn'))
+    setConnectingClass('connect-status')
+    setConnectCLass('circle circle-success')
+    setConnectingStatus(false)
+    setConnectingLog('')
   }
 
   /**
@@ -84,6 +173,11 @@ function VPN(): JSX.Element {
     setConnectingClass('connect-status')
     setConnectStatus(false)
     setTitle(t('vpn.connect.title'))
+    setConnectCLass('circle')
+    setConnectingStatus(false)
+    window.electron.ipcRenderer.send('openvpn-close')
+    window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
+    setConnectingLog('')
   }
 
   return (
@@ -106,7 +200,7 @@ function VPN(): JSX.Element {
         </div>
       </div>
       <div className="vpn-main-body">
-        <div className="circle" onClick={startVpn}>
+        <div className={connectClass} onClick={startVpn}>
           <div className="circleTwo">
             <span>{title}</span>
             <span className={connectingClass}>.</span>
@@ -115,6 +209,22 @@ function VPN(): JSX.Element {
             <span className={connectingClass}>.</span>
           </div>
         </div>
+        <span className="connecting-log">{connectingLog}</span>
+        {connectStatus ? (
+          <div className="vpn-body-nav">
+            <span className="vpn-body-nav-title">指路牌</span>
+            <div className="vpn-body-nav-info">
+              {nav?.map((item: NavList) => {
+                return (
+                  <a key={item.name} className="vpn-body-nav-item">
+                    <div className="vpn-body-nav-item-icon">{item.name.substr(0, 1)}</div>
+                    {item.name}
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
       <div className="vpn-footer"></div>
     </div>

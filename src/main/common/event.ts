@@ -6,7 +6,7 @@ import db, { ConfigValue } from '../store/vpn'
  */
 ipcMain.on('vpnDbGet', (_event: IpcMainEvent, field: string) => {
   if (db !== null && db.data !== null) {
-    _event.sender.send('vpnDbGet-' + field, Object.getOwnPropertyDescriptor(db.data, field)?.value)
+    _event.sender.send('vpnDbGet-' + field, db.get(field).value())
   } else {
     _event.sender.send('vpnDbGet-' + field, 'slb')
   }
@@ -15,10 +15,8 @@ ipcMain.on('vpnDbGet', (_event: IpcMainEvent, field: string) => {
 /**
  * 设置需要连接的VPN文件
  */
-ipcMain.on('dbSet-connectConfig', (_event: IpcMainEvent, args: any) => {
-  const value = args as ConfigValue
+ipcMain.on('vpnDbSet', (_event: IpcMainEvent, field: string, value: any) => {
   if (db !== null) {
-    db.data = { configValue: value.configValue }
-    db.write()
+    db.set(field, value).write()
   }
 })
