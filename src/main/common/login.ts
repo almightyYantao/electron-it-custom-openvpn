@@ -176,7 +176,7 @@ function getUserInfo(token: string, ldap: string): Promise<any> {
           reject(e)
         }
       })
-      response.on('error', (response, _data) => {
+      response.on('error', (response) => {
         xiaokuError(`获取用户信息失败:${response}`)
         reject(response)
       })

@@ -3,7 +3,7 @@ import { xiaokuDebug, xiaokuError, xiaokuInfo, xiaokuOpenvpnConnectLog } from '.
 import db from '../store/config'
 import * as vpnDb from '../store/vpn'
 import path from 'path'
-import cmd, { ExecException } from 'child_process'
+import cmd from 'child_process'
 const { Telnet } = require('telnet-client')
 import { aesDecrypt } from '../common/decrypt'
 import { is } from '@electron-toolkit/utils'
@@ -21,7 +21,7 @@ type OpenvpnStartStatus = {
 /**
  * 监听VPN连接按钮
  */
-ipcMain.on('openvpn-start', (_event: IpcMainEvent, args: string) => {
+ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
   //   checkPidIsActive(1000)
   if (is.dev) {
     startOpenvpn(_event)
@@ -58,7 +58,7 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent, args: string) => {
         _event.sender.send('init-start')
         console.log(app.getVersion())
         initOpenvpn()
-          .then((result) => {
+          .then(() => {
             _event.sender.send('init-success')
             vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
           })
@@ -87,7 +87,7 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent, args: string) => {
 ipcMain.on('initVpnConfig', (_event: IpcMainEvent) => {
   if (process.platform === 'darwin') {
     initOpenvpn()
-      .then((result) => {
+      .then(() => {
         _event.sender.send('init-success')
         vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
       })
@@ -103,7 +103,7 @@ ipcMain.on('initVpnConfig', (_event: IpcMainEvent) => {
 /**
  * 监听VPN断开按钮
  */
-ipcMain.on('openvpn-close', (_event: IpcMainEvent, args: string) => {
+ipcMain.on('openvpn-close', () => {
   // 先判断shell存不存在，不存在的话说明没运行过，但是他的状态又是true，那么直接至为false
   console.log('shell', shell, 'pid', shell?.pid)
   if (shell?.pid) {
@@ -116,7 +116,7 @@ ipcMain.on('openvpn-close', (_event: IpcMainEvent, args: string) => {
           closeVpn(shell)
         }
       })
-      .catch((err) => {
+      .catch(() => {
         vpnDb.default.set(VPN_ENUM.CONNECT_STATUS_STATUS, false).write()
       })
   } else {
@@ -136,7 +136,7 @@ ipcMain.on('releasePort', (_event: IpcMainEvent) => {
 })
 
 function releasePort(): Promise<boolean> {
-  return new Promise((_resolve, _reject) => {
+  return new Promise((_resolve) => {
     const options = {
       name: 'ItServer'
     }
@@ -148,6 +148,7 @@ function releasePort(): Promise<boolean> {
         function (error, stdout, stderr) {
           if (error) xiaokuError(`强制断开VPN失败: ${error}`)
           if (stderr) xiaokuError(`强制断开VPN失败: ${stderr}`)
+          xiaokuDebug(stdout)
           _resolve(true)
         }
       )
@@ -155,6 +156,7 @@ function releasePort(): Promise<boolean> {
       sudo.exec('taskkill /f /im openvpn*', options, function (error, stdout, stderr) {
         if (error) xiaokuError(`强制断开VPN失败: ${error}`)
         if (stderr) xiaokuError(`强制断开VPN失败: ${stderr}`)
+        xiaokuDebug(stdout)
         _resolve(true)
       })
     }
@@ -176,6 +178,7 @@ function checkPidIsActive(pid: number): Promise<boolean> {
       if (error || stderr) {
         _reject(`error: ${error}; stderr: ${stderr}`)
       } else {
+        xiaokuDebug(stdout)
         _resolve(true)
       }
     })
@@ -328,6 +331,7 @@ function initOpenvpn(): Promise<boolean> {
           if (error || stderr) {
             _resolve(`error: ${error};stderr: ${stderr}`)
           } else {
+            xiaokuDebug(stdout)
             xiaokuInfo('初始化完成')
             _reject(true)
           }
@@ -359,18 +363,24 @@ function closeVpn(openvpnProcess: cmd.ChildProcess): Promise<boolean> {
         if (process.platform === 'win32') {
           cmd.exec('tasklist | findStr ' + pid, (err, data, stderr) => {
             xiaokuError(`当前PID是否还存在: ${data}`)
-            if (data && data != '' && data != undefined && data != null) {
-              cmd.exec('taskkill /pid ' + pid, (err, data, stderr) => {
-                // 如果通过pid断开失败的话，那么就采用管理员强制断开
-                if (err || stderr) {
-                  xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
-                  _resolve(true)
-                  //   sudoDownVpn()
-                } else {
-                  xiaokuDebug(`断开VPN-response: ${data}`)
-                  _resolve(true)
-                }
-              })
+            if (err || stderr) {
+              xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
+              _resolve(true)
+              //   sudoDownVpn()
+            } else {
+              if (data && data != '' && data != undefined && data != null) {
+                cmd.exec('taskkill /pid ' + pid, (err, data, stderr) => {
+                  // 如果通过pid断开失败的话，那么就采用管理员强制断开
+                  if (err || stderr) {
+                    xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
+                    _resolve(true)
+                    //   sudoDownVpn()
+                  } else {
+                    xiaokuDebug(`断开VPN-response: ${data}`)
+                    _resolve(true)
+                  }
+                })
+              }
             }
           })
         }
@@ -411,10 +421,10 @@ function connectOpenVPNSocket(
     'hold off',
     'hold release'
   ]
-  let networkIn = 0
-  let networkOut = 0
-  let oldNetworkIn = 0
-  let oldNetworkOut = 0
+  // let networkIn = 0
+  // let networkOut = 0
+  // let oldNetworkIn = 0
+  // let oldNetworkOut = 0
   connection.on('data', (data: string) => {
     // 判断是否要求输入密码了
     if (data && data.indexOf("Need 'Auth' username/password") !== -1) {
@@ -427,12 +437,12 @@ function connectOpenVPNSocket(
     if (data && data.indexOf('>BYTECOUNT:') !== -1) {
       xiaokuDebug(`接收到的DATA: ${data}`)
       data = String(data).replace('>BYTECOUNT:', '')
-      networkIn = Number(data.split(',')[0]) - oldNetworkIn
-      networkOut = Number(data.split(',')[1]) - oldNetworkOut
+      // networkIn = Number(data.split(',')[0]) - oldNetworkIn
+      // networkOut = Number(data.split(',')[1]) - oldNetworkOut
       //   mainWindow.webContents.send('network_traffic_in', fomartNetwork(networkIn))
       //   mainWindow.webContents.send('network_traffic_out', fomartNetwork(networkOut))
-      oldNetworkIn = Number(data.split(',')[0])
-      oldNetworkOut = Number(data.split(',')[1])
+      // oldNetworkIn = Number(data.split(',')[0])
+      // oldNetworkOut = Number(data.split(',')[1])
     }
   })
   // 循环输出命令

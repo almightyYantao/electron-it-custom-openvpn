@@ -49,7 +49,7 @@ export default function xiaokuLog(level: string, text: any): void {
   }
 }
 
-ipcMain.on('downloadLog', (event) => {
+ipcMain.on('downloadLog', () => {
   log.transports.file.fileName = 'xiaoku-info.log'
   log.info('点击下载日志，下面记录基础信息')
   log.info('当前版本号: ', app.getVersion())
@@ -145,14 +145,14 @@ function getFullFileName(fileName): string {
   return path.join(config.dir, fileName)
 }
 
-/**
- * 删除文件
- * @param  {string} fileName 文件名 file.mtl
- */
-function delFile(fileName): void {
-  fs.unlink(getFullFileName(fileName), function (err) {
-    if (err) {
-      console.log('删除文件失败:' + fileName)
-    }
-  })
-}
+// /**
+//  * 删除文件
+//  * @param  {string} fileName 文件名 file.mtl
+//  */
+// function delFile(fileName): void {
+//   fs.unlink(getFullFileName(fileName), function (err) {
+//     if (err) {
+//       console.log('删除文件失败:' + fileName)
+//     }
+//   })
+// }
