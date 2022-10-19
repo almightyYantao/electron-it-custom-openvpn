@@ -2,24 +2,44 @@ appId: com.electron.app
 productName: xiaoku-helper
 directories:
   buildResources: build
+extraResources:
+  - { from: "static", to: "./static", filter: ["**/*"] }
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - "!**/.vscode/*"
+  - "!src/*"
+  - "!electron.vite.config.{js,ts,mjs,cjs}"
+  - "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}"
+  - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
 asarUnpack:
-  - '**/*.{node,dll}'
+  - "**/*.{node,dll}"
 afterSign: build/notarize.js
 win:
-  executableName: xiaoku-helper
+  executableName: ${productName}
+  requestedExecutionLevel: requireAdministrator
+  signingHashAlgorithms:
+    - sha256
+  certificateFile: "build/qunhe.pfx"
+  certificatePassword: "kjlsoftware2021"
+  rfc3161TimeStampServer: "http://time.certum.pl/"
+  verifyUpdateCodeSignature: false
+  icon: build/icon.png
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+  createDesktopShortcut: true
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createStartMenuShortcut: true
 mac:
   entitlementsInherit: build/entitlements.mac.plist
+  icon: build/icon.png
+  target:
+    target: "dmg"
+    arch:
+      - "x64"
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
@@ -27,6 +47,8 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
 dmg:
   artifactName: ${name}-${version}.${ext}
+  sign: false
+  icon: build/icon.png
 linux:
   target:
     - AppImage

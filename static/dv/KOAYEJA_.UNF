@@ -1,0 +1,62 @@
+;
+; Generic 36BW-8SeriesPCL Driver UNF-File for Win x64
+;
+; Copyright (C) 2003 KONICA MINOLTA, INC.
+;
+
+[Version]
+Signature="$Windows NT$"
+Provider=%KM%
+ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
+Class=Printer
+CatalogFile.ntamd64=KOAYEJA_.CAT
+DriverVer=12/22/2014,1.1.0.0
+
+[DriverInfo]
+DriverName=Generic 36BW-8SeriesPCL
+DriverCode=0804
+
+[Uninstall]
+DelReg=Environment_Reg
+DelFiles=KOAYE_COPY,PRINT_MONITOR
+
+[Environment_Reg]
+HKLM,"System\CurrentControlSet\Control\Print\Printers","StartOnBoot"
+HKCU,"SoftWare\Generic\Generic 36BW-8SeriesPCL"
+
+[KOAYE_COPY]
+KOAYEJAB.DLL,,,1
+KOAYEJAC.DLL,,,1
+KOAYEJAD.DLL,,,1
+KOAYEJAE.DLL,,,1
+KOAYEJAF.DLL,,,1
+KOAYEJAG.DLL,,,1
+KOAYEJAJ.DLL,,,1
+KOAYEJAM.DLL,,,1
+KOAYEJAN.DLL,,,1
+KOAYEJAO.DLL,,,1
+KOAYEJAR.DLL,,,1
+KOAYEJAS.DLL,,,1
+KOAYEJAU.DLL,,,1
+KOAYEJAW.DLL,,,1
+KOAYEJAX.DLL,,,1
+KOAYEJAC.KPD
+KOAYEJAD.KPD
+KOAYEJAM.KPD
+KOAYEJA_.KPD
+KOAYEJA_.CHM,,,1
+KOAYEJA_.UNF
+KOAYEJAA.KMP
+KOAYEJAB.KMP
+KOAYEJAC.KMP
+
+[PRINT_MONITOR]
+KOAYEJAL.DLL,,,1
+
+[DestinationDirs]
+DefaultDestDir=66000
+PRINT_MONITOR=66002
+
+[Strings]
+KM="Generic"
+DiskName="Generic 36BW-8Series Driver Disk"

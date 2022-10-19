@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainEvent } from 'electron'
+import { ipcMain, IpcMainEvent, shell } from 'electron'
 import db, { ConfigValue } from '../store/vpn'
 
 /**
@@ -19,4 +19,11 @@ ipcMain.on('vpnDbSet', (_event: IpcMainEvent, field: string, value: any) => {
   if (db !== null) {
     db.set(field, value).write()
   }
+})
+
+/**
+ * 浏览器打开链接
+ */
+ipcMain.on('open-url', (_event: IpcMainEvent, url: string) => {
+  shell.openExternal(url)
 })

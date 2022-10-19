@@ -1,8 +1,14 @@
-import Container from './components/Container'
 import 'antd/dist/antd.variable.min.css'
 import { ConfigProvider } from 'antd'
 
 import { useEffect } from 'react'
+import { HashRouter, Routes, Route } from 'react-router-dom'
+import VPN from './components/child/Vpn'
+import Container from './components/Container'
+import Soft from './components/child/Soft'
+import Tools from './components/child/Tools'
+import Setting from './components/child/Setting'
+import Login from './components/Login'
 
 function App(): JSX.Element {
   /**
@@ -23,7 +29,17 @@ function App(): JSX.Element {
   return (
     <div>
       <ConfigProvider>
-        <Container></Container>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<Container />}>
+              <Route index element={<VPN />} />
+              <Route path="/soft" element={<Soft />} />
+              <Route path="/tools" element={<Tools />} />
+              <Route path="/setting" element={<Setting />} />
+            </Route>
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </HashRouter>
       </ConfigProvider>
     </div>
   )

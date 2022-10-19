@@ -1,14 +1,21 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, globalShortcut } from 'electron'
 import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 require('@electron/remote/main').initialize()
 import './common/event'
 import './module/openvpn'
+import './module/network'
+import './module/soft'
+import './module/printer'
+import './module/setting'
+import './common/login'
+
 import db from './store/config'
-let mainWindow: BrowserWindow
+import { BASE } from './common/enumeration'
+global.mainWindow = null
 function createWindow(): void {
   // Create the browser window.
-  mainWindow = new BrowserWindow({
+  global.mainWindow = new BrowserWindow({
     width: 960,
     height: 720,
     show: false,
@@ -33,15 +40,16 @@ function createWindow(): void {
     }
   })
 
-  global.mainWindow = mainWindow
+  require('@electron/remote/main').enable(global.mainWindow.webContents)
 
-  require('@electron/remote/main').enable(mainWindow.webContents)
-
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  // globalShortcut.register('F12', function () {
+  //   global.mainWindow.webContents.openDevTools()
+  // })
+  global.mainWindow.on('ready-to-show', () => {
+    global.mainWindow.show()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  global.mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
@@ -49,9 +57,9 @@ function createWindow(): void {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    global.mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+    global.mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
 }
 
@@ -68,16 +76,18 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
   createWindow()
   // 初始化基础配置
-  db.defaults({
-    appPath: path.join(
+  db.set(
+    BASE.APP_PATH,
+    path.join(
       app.getAppPath().replace(/\\/g, '\\\\').replace('\\\\app.asar', '').replace('/app.asar', ''),
       '/static'
-    ),
-    staticPath: path.join(__dirname, '/static').replace(/\\/g, '\\\\'),
-    version: app.getVersion()
-  }).write()
+    )
+  ).write()
+  db.set(BASE.VERSION, app.getVersion()).write()
+  db.set(BASE.STATIC_PATH, path.join(__dirname, '/static').replace(/\\/g, '\\\\')).write()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

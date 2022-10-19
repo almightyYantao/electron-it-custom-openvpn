@@ -15,10 +15,12 @@ const resources = {
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: 'zh',
+  lng:
+    localStorage.getItem('localLanguage') == null || localStorage.getItem('localLanguage') == 'zh'
+      ? 'zh'
+      : 'en',
   interpolation: {
     escapeValue: false
   }
 })
-
 export default i18n

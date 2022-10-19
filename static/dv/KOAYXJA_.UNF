@@ -1,0 +1,63 @@
+;
+; Generic 42BW-4SeriesPCL Driver UNF-File for Win x64
+;
+; Copyright(C) 2003-2013 KONICA MINOLTA BUSINESS TECHNOLOGIES, INC.
+; All rights reserved.
+
+[Version]
+Signature="$Windows NT$"
+Provider=%KM%
+ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
+Class=Printer
+CatalogFile.ntamd64=KOAYXJA_.CAT
+DriverVer=11/26/2012,1.3.0.0
+
+[DriverInfo]
+DriverName=Generic 42BW-4SeriesPCL
+DriverCode=0804
+
+[Uninstall]
+DelReg=Environment_Reg
+DelFiles=KOAYX_COPY,PRINT_MONITOR
+
+[Environment_Reg]
+HKLM,"System\CurrentControlSet\Control\Print\Printers","StartOnBoot"
+HKCU,"SoftWare\Generic\Generic 42BW-4SeriesPCL"
+
+[KOAYX_COPY]
+KOAYXJAB.DLL,,,1
+KOAYXJAC.DLL,,,1
+KOAYXJAD.DLL,,,1
+KOAYXJAF.DLL,,,1
+KOAYXJAG.DLL,,,1
+KOAYXJAJ.DLL,,,1
+KOAYXJAM.DLL,,,1
+KOAYXJAN.DLL,,,1
+KOAYXJAO.DLL,,,1
+KOAYXJAR.DLL,,,1
+KOAYXJAS.DLL,,,1
+KOAYXJAU.DLL,,,1
+KOAYXJAW.DLL,,,1
+KOAYXJAX.DLL,,,1
+KOAYXJAC.KPD
+KOAYXJAD.KPD
+KOAYXJAM.KPD
+KOAYXJA_.KPD
+KOAYXJA_.CHM,,,1
+KOAYXJA_.CNT
+KOAYXJA_.HLP
+KOAYXJA_.UNF
+KOAYXJAA.KMP
+KOAYXJAB.KMP
+KOAYXJAC.KMP
+
+[PRINT_MONITOR]
+KOAYXJAL.DLL,,,1
+
+[DestinationDirs]
+DefaultDestDir=66000
+PRINT_MONITOR=66002
+
+[Strings]
+KM="Generic"
+DiskName="Generic 42BW-4Series Driver Disk"

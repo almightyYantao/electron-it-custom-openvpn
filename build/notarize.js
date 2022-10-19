@@ -6,7 +6,7 @@ module.exports = async (context) => {
   console.log('aftersign hook triggered, start to notarize app.')
 
   if (!process.env.CI) {
-    console.log(`skipping notarizing, not in CI.`)
+    console.log(process.env.CI, `skipping notarizing, not in CI.`)
     return
   }
 
@@ -15,7 +15,7 @@ module.exports = async (context) => {
     return
   }
 
-  const appId = 'com.electron.app'
+  const appId = 'com.qunhe.its.app'
 
   const { appOutDir } = context
 
@@ -25,6 +25,7 @@ module.exports = async (context) => {
     await notarize({
       appBundleId: appId,
       appPath: `${appOutDir}/${appName}.app`,
+      teamId: 'L839T6VMSZ',
       appleId: process.env.APPLE_ID,
       appleIdPassword: process.env.APPLEIDPASS
     })

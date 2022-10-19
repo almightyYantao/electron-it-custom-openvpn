@@ -1,0 +1,21 @@
+.printer-card {
+    border: 1px solid rgb(93%, 93%, 93%);
+    &__main {
+        display: flex;
+        flex-wrap: wrap;
+        overflow-y: scroll;
+        height: 560px;
+        width: calc(100vw - 130px);
+        padding: 10px;
+    }
+
+    &__main::-webkit-scrollbar {
+        display: none;
+    }
+
+    &__child {
+        width: 250px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+}

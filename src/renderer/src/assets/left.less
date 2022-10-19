@@ -6,21 +6,105 @@
     flex-direction: column;
 }
 
-.left-nav {
+.left {
+    input {
+        display: none;
+    }
+
+    position: relative;
     width: 100px;
     padding: 10px 0 10px 0;
     text-align: center;
     color: #fff;
     font-size: 30px;
-    cursor: pointer;
     display: inline-flex;
     flex-direction: column;
+    // box-shadow: 0px 1px 6px 1px #001695
 }
 
-.left-nav-active {
-    background-color: #fff;
-    color: var(--ant-primary-color);
-    transition: all 0.5s ease 0s;
+.left-nav {
+
+    &__radio {
+        width: 100px;
+        background-color: #fff;
+        height: 80px;
+    }
+
+    &__active {
+        width: 90px;
+        height: 70px;
+        position: absolute;
+        margin-left: 5px;
+        border-radius: 20px;
+        display: none;
+        box-shadow: inset 0px 1px 8px 1px #001695
+    }
+
+    &__1,
+    &__2,
+    &__3,
+    &__4 {
+        display: inline-flex;
+        flex-direction: column;
+        text-align: center;
+        color: #fff;
+        font-size: 30px;
+        justify-content: center;
+        width: 100px;
+        height: 80px;
+        cursor: pointer;
+    }
+
+    // &:hover{
+
+    // }
+    #left-nav-1:checked~&__1 {
+        background-color: #fff;
+        color: var(--ant-primary-color);
+    }
+
+    #left-nav-2:checked~&__2 {
+        background-color: #fff;
+        color: var(--ant-primary-color);
+    }
+
+    #left-nav-3:checked~&__3 {
+        background-color: #fff;
+        color: var(--ant-primary-color);
+    }
+
+    #left-nav-4:checked~&__4 {
+        background-color: #fff;
+        color: var(--ant-primary-color);
+    }
+
+    // #left-nav-1:checked~&__active {
+    //     position: absolute;
+    //     display: block;
+    //     transform: translateY(6.6rem);
+    //     transition: transform 0.3s cubic-bezier(1, 0.645, 0.045, 0.355);
+    // }
+
+    // #left-nav-2:checked~&__active {
+    //     position: absolute;
+    //     display: block;
+    //     transform: translateY(11.6rem);
+    //     transition: transform 0.3s cubic-bezier(1, 0.645, 0.045, 0.355);
+    // }
+
+    // #left-nav-3:checked~&__active {
+    //     position: absolute;
+    //     display: block;
+    //     transform: translateY(16.6rem);
+    //     transition: transform 0.3s cubic-bezier(1, 0.645, 0.045, 0.355);
+    // }
+
+    // #left-nav-4:checked~&__active {
+    //     position: absolute;
+    //     display: block;
+    //     transform: translateY(21.6rem);
+    //     transition: transform 0.3s cubic-bezier(1, 0.645, 0.045, 0.355);
+    // }
 }
 
 .left-nav-strong {
