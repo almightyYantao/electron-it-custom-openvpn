@@ -7,7 +7,7 @@ import cmd from 'child_process'
 const { Telnet } = require('telnet-client')
 import { aesDecrypt } from '../common/decrypt'
 import { is } from '@electron-toolkit/utils'
-import { BASE, VPN_ENUM } from '../common/enumeration'
+import { BASE, USER, VPN_ENUM } from '../common/enumeration'
 const type = process.platform
 let connection: any
 let shell: cmd.ChildProcess
@@ -173,6 +173,8 @@ function checkPidIsActive(pid: number): Promise<boolean> {
     let cmdShell
     if (type === 'darwin') {
       cmdShell = `ps -ef | awk '{print $2}' | grep ${pid} | grep -v grep`
+    } else {
+      cmdShell = `tasklist /FI "PID eq ${pid}"`
     }
     cmd.exec(`${cmdShell}`, (error, stdout, stderr) => {
       if (error || stderr) {
@@ -198,18 +200,20 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         ? 7001
         : vpnDb.default.get(VPN_ENUM.VPN_PORT).value()
     let ssh = ''
+    const configName = vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value()
     if (type === 'darwin') {
       ssh =
         `"/Library/Application Support/xiaoku-app/macos/openvpn-executable" ` +
         `--cd "/Library/Application Support/xiaoku-app/" ` +
-        `--config "./config/qunheVPN-${vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value()}.ovpn" ` +
+        `--config "./config/qunheVPN-${configName === undefined ? 'slb' : configName}.ovpn" ` +
         `--management 127.0.0.1 ${port} --auth-retry interact --management-query-passwords ` +
         `--management-hold --script-security 2 ` +
         `--up "./macos/dns.sh" ` +
         `--down "./macos/close.sh"`
     } else {
-      const config = `"${db.get(BASE.APP_PATH).value() + '/assets/config/'}
-      ${vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value()}.ovpn"`
+      const config = `"${db.get(BASE.APP_PATH).value() + '/assets/config/'}qunheVPN-${
+        configName === undefined ? 'slb' : configName
+      }.ovpn"`
       ssh = `"${path.join(
         db.get(BASE.APP_PATH).value(),
         '/assets/windows/openvpn.exe'
@@ -252,12 +256,19 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
       //   global.mainWindow.webContents.send('setConnectingLog', data)
       if (data.indexOf('Need hold release from management interface') !== -1) {
         // 发现Openvpn开始接入management了，那么启动数据转发
-        const syncUsername = cmd.execSync(
-          `security find-generic-password -a "xiaoku-username" -s "xiaoku-app" -w`
-        )
-        const syncPassword = cmd.execSync(
-          `security find-generic-password -a "xiaoku-password" -s "xiaoku-app" -w`
-        )
+        let syncUsername
+        let syncPassword
+        if (process.platform === 'darwin') {
+          syncUsername = cmd.execSync(
+            `security find-generic-password -a "xiaoku-username" -s "xiaoku-app" -w`
+          )
+          syncPassword = cmd.execSync(
+            `security find-generic-password -a "xiaoku-password" -s "xiaoku-app" -w`
+          )
+        } else {
+          syncUsername = db.get(USER.USER_USERNAME).value()
+          syncPassword = db.get(USER.USER_PASSWORD).value()
+        }
         connectOpenVPNSocket(
           syncUsername.toString().replace('\n', ''),
           aesDecrypt(
@@ -357,34 +368,36 @@ function closeVpn(openvpnProcess: cmd.ChildProcess): Promise<boolean> {
       if (openvpnProcess) {
         openvpnProcess.kill('SIGTERM')
         xiaokuDebug(`子进程断开状态: ${openvpnProcess.killed}`)
+        // if (process.platform === 'win32') {
+        //   releasePort()
+        // }
+        // setTimeout(() => {
+        //   if (process.platform === 'win32') {
+        //     cmd.exec(`tasklist /FI "PID eq ${pid}"`, (err, data, stderr) => {
+        //       xiaokuError(`当前PID是否还存在: ${data}`)
+        //       if (err || stderr) {
+        //         xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
+        //         _resolve(true)
+        //       } else {
+        //         if (data && data != '' && data != undefined && data != null) {
+        //           cmd.exec('taskkill /pid ' + pid, (err, data, stderr) => {
+        //             // 如果通过pid断开失败的话，那么就采用管理员强制断开
+        //             if (err || stderr) {
+        //               xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
+        //               _resolve(true)
+        //               releasePort()
+        //             } else {
+        //               xiaokuDebug(`断开VPN-response: ${data}`)
+        //               _resolve(true)
+        //             }
+        //           })
+        //         }
+        //       }
+        //     })
+        //   }
+        // }, 100)
         _resolve(true)
       }
-      setTimeout(() => {
-        if (process.platform === 'win32') {
-          cmd.exec('tasklist | findStr ' + pid, (err, data, stderr) => {
-            xiaokuError(`当前PID是否还存在: ${data}`)
-            if (err || stderr) {
-              xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
-              _resolve(true)
-              //   sudoDownVpn()
-            } else {
-              if (data && data != '' && data != undefined && data != null) {
-                cmd.exec('taskkill /pid ' + pid, (err, data, stderr) => {
-                  // 如果通过pid断开失败的话，那么就采用管理员强制断开
-                  if (err || stderr) {
-                    xiaokuError(`断开VPN失败: ${err} - ${stderr}`)
-                    _resolve(true)
-                    //   sudoDownVpn()
-                  } else {
-                    xiaokuDebug(`断开VPN-response: ${data}`)
-                    _resolve(true)
-                  }
-                })
-              }
-            }
-          })
-        }
-      }, 100)
     } catch (e) {
       _reject(false)
     }

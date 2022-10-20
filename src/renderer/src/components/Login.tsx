@@ -19,6 +19,7 @@ function Login(): JSX.Element {
     window.electron.ipcRenderer.once('login-success', (_event: Event, json: any) => {
       window.electron.ipcRenderer.removeAllListeners('login-error')
       localStorage.setItem('avatar', json.avatar)
+      localStorage.setItem('username', json.ldapId)
       setLoginLoading(false)
       // 跳转到VPN的页面
       navigate('/')

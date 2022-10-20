@@ -17,7 +17,7 @@ type NavList = {
 
 function VPN(): JSX.Element {
   const [configs, setConfigs] = useState<Config[]>()
-  const [useConfig, setUseConfig] = useState('')
+  const [useConfig, setUseConfig] = useState('qunhe-slb')
   const [title, setTitle] = useState()
   const [connectStatus, setConnectStatus] = useState(false)
   const [connectingStatus, setConnectingStatus] = useState(false)
@@ -42,7 +42,7 @@ function VPN(): JSX.Element {
     setUseConfig(name)
     getConfigList(ldap).then((response: any) => {
       const res = response as Config[]
-      if (name === null) {
+      if (name === null || name === undefined) {
         setUseConfig(res[0].configValue)
       }
       setConfigs(res)
@@ -72,7 +72,7 @@ function VPN(): JSX.Element {
         // 获取上一次连接的配置文件
         window.electron.ipcRenderer.send('vpnDbGet', 'configValue')
         window.electron.ipcRenderer.once('vpnDbGet-configValue', (_event: Event, arg: string) => {
-          getConfig('yantao', arg)
+          getConfig(String(localStorage.getItem('username')), arg)
         })
         setTitle(t('vpn.connect.title'))
         setNav([
@@ -193,15 +193,15 @@ function VPN(): JSX.Element {
     /**
      * 设置一个延时检测
      */
-    setTimeout(() => {
-      if (connectStatus !== true) {
-        Modal.error({
-          title: 'VPN Connect Error',
-          content: '连接超时，请联系IT桌面运维'
-        })
-        closeVpn()
-      }
-    }, 30000)
+    // setTimeout(() => {
+    //   if (connectStatus !== true) {
+    //     Modal.error({
+    //       title: 'VPN Connect Error',
+    //       content: '连接超时，请联系IT桌面运维'
+    //     })
+    //     closeVpn()
+    //   }
+    // }, 30000)
 
     /**
      * 监听后端的连接状态返回
