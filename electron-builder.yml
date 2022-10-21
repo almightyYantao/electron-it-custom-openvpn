@@ -14,7 +14,7 @@ asarUnpack:
   - "**/*.{node,dll}"
 afterSign: build/notarize.js
 win:
-  executableName: ${productName}
+  executableName: 小酷助手
   requestedExecutionLevel: requireAdministrator
   signingHashAlgorithms:
     - sha256

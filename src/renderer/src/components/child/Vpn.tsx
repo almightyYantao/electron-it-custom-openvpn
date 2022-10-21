@@ -45,6 +45,9 @@ function VPN(): JSX.Element {
   const [connectingUp, setConnectingUp] = useState('')
   const [connectingDown, setConnectingDown] = useState('')
   const [connectProxyValue, setConnectProxyValue] = useState('off')
+  const [openvpnStatusEvent, setOpenvpnStatusEvent] = useState('')
+  const [proxyActive, setProxyActive] = useState(false)
+  const [configMap, setConfigMap] = useState({})
 
   const navigate = useNavigate()
 
@@ -57,6 +60,9 @@ function VPN(): JSX.Element {
     setUseConfig(name)
     getConfigList(ldap).then((response: any) => {
       const res = response as Config[]
+      res.map((item: Config) => {
+        setConfigMap((per) => ({ ...per, [item.configValue]: item }))
+      })
       if (name === null || name === undefined) {
         setUseConfig(res[0].configValue)
       }
@@ -72,6 +78,12 @@ function VPN(): JSX.Element {
   const configOnChange = (value: string) => {
     console.log(`selected ${value}`)
     setUseConfig(value)
+    console.log(configMap, configMap[value]?.pac)
+    if (configMap[value] && configMap[value]?.pac) {
+      sessionStorage.setItem('proxyActive', String(true))
+    } else {
+      sessionStorage.setItem('proxyActive', String(false))
+    }
     window.electron.ipcRenderer.send('vpnDbSet', 'configValue', value)
   }
 
@@ -197,6 +209,10 @@ function VPN(): JSX.Element {
    * VPN总启动方式
    */
   const startVpn = () => {
+    if (sessionStorage.getItem('just-started') === 'true') {
+      console.log('禁止操作阶段')
+      return
+    }
     if (connectStatus === true || connectingStatus === true) {
       closeVpn()
     } else {
@@ -205,13 +221,27 @@ function VPN(): JSX.Element {
   }
 
   /**
+   * 监听所有的VPN事件
+   */
+  const openvpnEventChange = () => {
+    window.electron.ipcRenderer.on(
+      'openvpn_event',
+      (_event: Event, event: string, value: string) => {
+        console.log(event, value)
+        setOpenvpnStatusEvent(event)
+        if (event === 'ADD_ROUTES') {
+          sessionStorage.setItem('just-started', String(true))
+        } else {
+          sessionStorage.setItem('just-started', String(false))
+        }
+      }
+    )
+  }
+
+  /**
    * 连接VPN
    */
   const connectVpn = () => {
-    if (sessionStorage.getItem('just-started') === 'true') {
-      console.log('禁止操作阶段')
-      return
-    }
     window.electron.ipcRenderer.send('openvpn-start')
     // 发送设置当前链接中的状态
     window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', true)
@@ -234,51 +264,49 @@ function VPN(): JSX.Element {
     setTimeout(() => {
       sessionStorage.setItem('just-started', 'false')
     }, 3000)
-    window.electron.ipcRenderer.once('dont_init', () => {
-      // 设置链接中的标题和状态
-      setConnectingClass(connectingClass + ' connect-status-ing')
-      setConnectingStatus(true)
-      setTitle(t('vpn.connect.connecting'))
+    // 设置链接中的标题和状态
+    setConnectingClass(connectingClass + ' connect-status-ing')
+    setConnectingStatus(true)
+    setTitle(t('vpn.connect.connecting'))
+    openvpnEventChange()
+    /**
+     * 设置一个延时检测
+     */
+    // setTimeout(() => {
+    //   if (connectStatus !== true) {
+    //     Modal.error({
+    //       title: 'VPN Connect Error',
+    //       content: '连接超时，请联系IT桌面运维'
+    //     })
+    //     closeVpn()
+    //   }
+    // }, 30000)
 
-      /**
-       * 设置一个延时检测
-       */
-      // setTimeout(() => {
-      //   if (connectStatus !== true) {
-      //     Modal.error({
-      //       title: 'VPN Connect Error',
-      //       content: '连接超时，请联系IT桌面运维'
-      //     })
-      //     closeVpn()
-      //   }
-      // }, 30000)
-
-      /**
-       * 监听后端的连接状态返回
-       */
-      window.electron.ipcRenderer.once('openvpn-start-status', (_event: Event, arg: any) => {
-        const status = arg.status
-        const remark = arg.remark
-        window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', false)
-        if (status == true) {
-          // 计算从点击到完成的耗时
-          localStorage.setItem(
-            'timeConsuming',
-            String(new Date().getTime() - Number(localStorage.getItem('timeConsuming')))
-          )
-          setSuccessStatus()
-          setRemoteNetwork(arg.connectIp)
-        } else {
-          Modal.error({
-            title: 'VPN Connect Error',
-            content: remark
-          })
-          closeVpn()
-        }
-      })
-      window.electron.ipcRenderer.on('setConnectingLog', (_event: Event, arg: string) => {
-        setConnectingLog(arg)
-      })
+    /**
+     * 监听后端的连接状态返回
+     */
+    window.electron.ipcRenderer.once('openvpn-start-status', (_event: Event, arg: any) => {
+      const status = arg.status
+      const remark = arg.remark
+      window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', false)
+      if (status == true) {
+        // 计算从点击到完成的耗时
+        localStorage.setItem(
+          'timeConsuming',
+          String(new Date().getTime() - Number(localStorage.getItem('timeConsuming')))
+        )
+        setSuccessStatus()
+        setRemoteNetwork(arg.connectIp)
+      } else {
+        Modal.error({
+          title: 'VPN Connect Error',
+          content: remark
+        })
+        closeVpn()
+      }
+    })
+    window.electron.ipcRenderer.on('setConnectingLog', (_event: Event, arg: string) => {
+      setConnectingLog(arg)
     })
   }
 
@@ -294,6 +322,7 @@ function VPN(): JSX.Element {
     window.electron.ipcRenderer.removeAllListeners('init-error')
     window.electron.ipcRenderer.removeAllListeners('init-start')
     window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
+    window.electron.ipcRenderer.removeAllListeners('openvpn_event')
     setConnectingStatus(false)
     setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     setConnectingLog('')
@@ -309,6 +338,9 @@ function VPN(): JSX.Element {
       setConnectProxyValue(!arg ? 'off' : arg)
       proxyChange(arg)
     })
+    if (sessionStorage.getItem('proxyActive') === String(true)) {
+      setProxyActive(true)
+    }
   }
 
   /**
@@ -330,6 +362,7 @@ function VPN(): JSX.Element {
     setConnectingClass('connect-status')
     setConnectStatus(false)
     setTitle(t('vpn.connect.title'))
+    setProxyActive(false)
     setConnectCLass('circle')
     setConnectingStatus(false)
     window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
@@ -337,6 +370,7 @@ function VPN(): JSX.Element {
     window.electron.ipcRenderer.removeAllListeners('network_traffic_out')
     window.electron.ipcRenderer.removeAllListeners('network_traffic_in')
     window.electron.ipcRenderer.removeAllListeners('dont_init')
+    window.electron.ipcRenderer.removeAllListeners('openvpn_event')
     setConnectingLog('')
     setRemoteNetwork('')
   }
@@ -430,7 +464,7 @@ function VPN(): JSX.Element {
               {connectingDown}
             </span>
           ) : null}
-          {connectStatus ? (
+          {proxyActive ? (
             <div className="connect-proxy">
               <Radio.Group
                 value={connectProxyValue}

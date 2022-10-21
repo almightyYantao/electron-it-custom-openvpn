@@ -9,31 +9,17 @@ ipcMain.on('setRemember', (_event: IpcMainEvent, remember: boolean) => {
   db.set(USER.USER_REMEMBER_ME, remember).write()
 })
 
+ipcMain.on('getRemember', (_event: IpcMainEvent) => {
+  _event.sender.send('getRemember', db.get(USER.USER_REMEMBER_ME).value())
+})
+
 ipcMain.on('getUsername', (_event: IpcMainEvent) => {
   if (db.get(USER.USER_REMEMBER_ME).value() === true) {
-    if (process.platform === 'win32') {
-      _event.sender.send(
-        'getUsername',
-        db.get(USER.USER_USERNAME).value(),
-        db.get(USER.USER_PASSWORD).value()
-      )
-    } else {
-      const syncUsername = cmd.execSync(
-        `security find-generic-password -a "xiaoku-username" -s "xiaoku-app" -w`
-      )
-      const syncPassword = cmd.execSync(
-        `security find-generic-password -a "xiaoku-password" -s "xiaoku-app" -w`
-      )
-      _event.sender.send(
-        'getUsername',
-        syncUsername.toString().replace('\n', ''),
-        aesDecrypt(
-          syncPassword.toString().replace('\n', ''),
-          VPN_ENUM.SECRET_KEY,
-          VPN_ENUM.SECRET_KEY_IV
-        )
-      )
-    }
+    _event.sender.send(
+      'getUsername',
+      db.get(USER.USER_USERNAME).value(),
+      aesDecrypt(db.get(USER.USER_PASSWORD).value(), VPN_ENUM.SECRET_KEY, VPN_ENUM.SECRET_KEY_IV)
+    )
   } else {
     _event.sender.send('getUsername', '', '')
   }
@@ -72,29 +58,10 @@ ipcMain.on('login', (_event: IpcMainEvent, username: string, password: string) =
         getUserInfo(json.d, username)
           .then((result) => {
             _event.sender.send('login-success', result)
-            if (process.platform == 'darwin') {
-              cmd.exec('security delete-generic-password -a "xiaoku-username" -s "xiaoku-app"')
-              cmd.exec('security delete-generic-password -a "xiaoku-password" -s "xiaoku-app"')
-              cmd.exec(
-                `${
-                  'security add-generic-password -a "xiaoku-username" -s "xiaoku-app" -w "' +
-                  username +
-                  '"'
-                }`
-              )
-              cmd.exec(
-                `${
-                  'security add-generic-password -a "xiaoku-password" -s "xiaoku-app" -w "' +
-                  aesEncrypt(password, VPN_ENUM.SECRET_KEY, VPN_ENUM.SECRET_KEY_IV) +
-                  '"'
-                }`
-              )
-            } else {
-              db.set(
-                USER.USER_PASSWORD,
-                aesEncrypt(password, VPN_ENUM.SECRET_KEY, VPN_ENUM.SECRET_KEY_IV)
-              ).write()
-            }
+            db.set(
+              USER.USER_PASSWORD,
+              aesEncrypt(password, VPN_ENUM.SECRET_KEY, VPN_ENUM.SECRET_KEY_IV)
+            ).write()
           })
           .catch((error) => {
             _event.sender.send('login-error', error)

@@ -9,6 +9,7 @@ import { CheckboxChangeEvent } from 'antd/lib/checkbox'
 function Login(): JSX.Element {
   const [loginLoading, setLoginLoading] = useState(false)
   const [fields, setFields] = useState<FieldData[]>([])
+  const [remember, setRemember] = useState(false)
 
   const navigate = useNavigate()
 
@@ -21,7 +22,7 @@ function Login(): JSX.Element {
       localStorage.setItem('username', json.ldapId)
       setLoginLoading(false)
       // 跳转到VPN的页面
-      navigate('/')
+      navigate('/vpn')
     })
     window.electron.ipcRenderer.once('login-error', (_event: Event, error: any) => {
       window.electron.ipcRenderer.removeAllListeners('login-success')
@@ -44,6 +45,11 @@ function Login(): JSX.Element {
         ])
       }
     )
+    window.electron.ipcRenderer.send('getRemember')
+    window.electron.ipcRenderer.once('getRemember', (_event, arg: boolean) => {
+      console.log(arg)
+      setRemember(arg)
+    })
   }, [])
 
   const onFinishFailed = (errorInfo: any): void => {
@@ -55,6 +61,8 @@ function Login(): JSX.Element {
    * @param e
    */
   const rememberMe = (e: CheckboxChangeEvent): void => {
+    setRemember(e.target.checked)
+    console.log(e.target.checked)
     window.electron.ipcRenderer.send('setRemember', e.target.checked)
   }
 
@@ -75,7 +83,6 @@ function Login(): JSX.Element {
             name="basic"
             labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
-            initialValues={{ remember: true }}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
             autoComplete="off"
@@ -96,7 +103,9 @@ function Login(): JSX.Element {
               <Input.Password />
             </Form.Item>
             <div className="login__right__submit">
-              <Checkbox onChange={rememberMe}>{t('base.login.rememberMe')}</Checkbox>
+              <Checkbox checked={remember} onChange={rememberMe}>
+                {t('base.login.rememberMe')}
+              </Checkbox>
               <Button type="primary" htmlType="submit">
                 {t('base.login.submit')}
               </Button>

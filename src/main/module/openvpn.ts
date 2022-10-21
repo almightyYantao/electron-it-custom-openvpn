@@ -267,19 +267,8 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
       //   global.mainWindow.webContents.send('setConnectingLog', data)
       if (data.indexOf('Need hold release from management interface') !== -1) {
         // 发现Openvpn开始接入management了，那么启动数据转发
-        let syncUsername
-        let syncPassword
-        if (process.platform === 'darwin') {
-          syncUsername = cmd.execSync(
-            `security find-generic-password -a "xiaoku-username" -s "xiaoku-app" -w`
-          )
-          syncPassword = cmd.execSync(
-            `security find-generic-password -a "xiaoku-password" -s "xiaoku-app" -w`
-          )
-        } else {
-          syncUsername = db.get(USER.USER_USERNAME).value()
-          syncPassword = db.get(USER.USER_PASSWORD).value()
-        }
+        const syncUsername = db.get(USER.USER_USERNAME).value()
+        const syncPassword = db.get(USER.USER_PASSWORD).value()
         connectOpenVPNSocket(
           syncUsername.toString().replace('\n', ''),
           aesDecrypt(
@@ -298,6 +287,7 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         // subIndex = subIndex.replace('MANAGEMENT: >STATE:', '');
         // 启动完成后进行数据分割，判断是否连接成功或者失败
         const mg = data.substring(subIndex).split(',')
+        _event.sender.send('openvpn_event', mg[1], mg[2])
         if (mg[1] === 'CONNECTED' && mg[2] === 'SUCCESS') {
           // event.sender.send('vpnSuccess')
           // event.sender.send('vpn-ip', mg[3])
@@ -326,6 +316,8 @@ function openvpnStatus(data: string): Promise<boolean> {
       _reject(`端口被占用，请修改当前连接端口`)
     } else if (data.indexOf('AUTH_FAILED') != -1) {
       _reject(`账号密码错误，请重新登录小酷`)
+    } else if (data.indexOf('Address already in use') != -1) {
+      _reject(`Address already in use (errno=48)`)
     }
   })
 }

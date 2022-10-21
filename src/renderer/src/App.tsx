@@ -31,13 +31,13 @@ function App(): JSX.Element {
       <ConfigProvider>
         <HashRouter>
           <Routes>
-            <Route path="/" element={<Container />}>
-              <Route index element={<VPN />} />
-              <Route path="/soft" element={<Soft />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/setting" element={<Setting />} />
+            <Route index element={<Login />} />
+            <Route path="/vpn" element={<Container />}>
+              <Route index path="/vpn" element={<VPN />} />
+              <Route path="/vpn/soft" element={<Soft />} />
+              <Route path="/vpn/tools" element={<Tools />} />
+              <Route path="/vpn/setting" element={<Setting />} />
             </Route>
-            <Route path="/login" element={<Login />} />
           </Routes>
         </HashRouter>
       </ConfigProvider>

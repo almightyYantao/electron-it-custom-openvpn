@@ -20,7 +20,7 @@ window.addEventListener('DOMContentLoaded', function onDOMContentLoaded() {
 function Container(): JSX.Element {
   const location = useLocation()
   const navigate = useNavigate()
-  const [locaMap] = useState(['/', 'soft', 'tools', 'setting'])
+  const [locaMap] = useState(['/vpn', '/vpn/soft', '/vpn/tools', '/vpn/setting'])
   const [checkedMap, setCheckedMap] = useState({})
   const [badgeUpdate, setBadgeUpdate] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -51,16 +51,16 @@ function Container(): JSX.Element {
    */
   useEffect(() => {
     switch (location.pathname) {
-      case '/':
+      case '/vpn':
         setCheckedMap({ [0]: true })
         break
-      case '/soft':
+      case '/vpn/soft':
         setCheckedMap({ [1]: true })
         break
-      case '/tools':
+      case '/vpn/tools':
         setCheckedMap({ [2]: true })
         break
-      case '/setting':
+      case '/vpn/setting':
         setCheckedMap({ [3]: true })
         break
     }

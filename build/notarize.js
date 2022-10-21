@@ -27,7 +27,7 @@ module.exports = async (context) => {
       appPath: `${appOutDir}/${appName}.app`,
       teamId: 'L839T6VMSZ',
       appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLEIDPASS
+      appleIdPassword: process.env.APPLE_ID_PASS
     })
   } catch (error) {
     console.error(error)

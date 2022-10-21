@@ -58,7 +58,8 @@ function Setting(): JSX.Element {
    */
   const exitLogin = (): void => {
     window.electron.ipcRenderer.send('exitLogin')
-    navigate('/login')
+    window.electron.ipcRenderer.send('vpnDbSet', 'normallyClosed', true)
+    navigate('/')
   }
 
   /**
