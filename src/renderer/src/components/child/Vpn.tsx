@@ -64,7 +64,7 @@ function VPN(): JSX.Element {
         setConfigMap((per) => ({ ...per, [item.configValue]: item }))
       })
       if (name === null || name === undefined) {
-        setUseConfig(res[0].configValue)
+        configOnChange(res[0].configValue)
       }
       setConfigs(res)
       initConfig(res)
@@ -76,9 +76,7 @@ function VPN(): JSX.Element {
    * @param value 配置文件名称
    */
   const configOnChange = (value: string) => {
-    console.log(`selected ${value}`)
     setUseConfig(value)
-    console.log(configMap, configMap[value]?.pac)
     if (configMap[value] && configMap[value]?.pac) {
       sessionStorage.setItem('proxyActive', String(true))
     } else {
