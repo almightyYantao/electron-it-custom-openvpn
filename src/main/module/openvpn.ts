@@ -46,13 +46,13 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
   } else {
     if (vpnDb.default.get(VPN_ENUM.INT_VERSION).value() !== app.getVersion()) {
       if (process.platform === 'win32') {
+        _event.sender.send('init-start')
         const result = cmd.execSync(`ipconfig /all | findStr "TAP-Windows\\ Adapter\\ V9"`)
         if (!result) {
           const tapSsh = `"${path.join(
             db.get(BASE.APP_PATH).value(),
             '/assets/windows/tap-windows.exe'
           )}" /S`
-          _event.sender.send('init-start')
           try {
             cmd.execSync(tapSsh)
             _event.sender.send('init-success')
@@ -60,6 +60,9 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
             xiaokuError(`初始化失败：${e}`)
             _event.sender.send('init-error', e)
           }
+          return
+        } else {
+          _event.sender.send('init-success')
           return
         }
       } else {
@@ -557,7 +560,7 @@ ipcMain.on('initConfigList', (_event: IpcMainEvent, configs: any) => {
 
 function initConfigList(configs): Promise<any> {
   const newConfigList = new Map()
-  return new Promise((resolve, rejects) => {
+  return new Promise((resolve) => {
     const crypto = require('crypto')
     const filePath = db.get(BASE.APP_PATH).value() + '/assets/config/'
     fs.readdir(filePath, async function (err, files) {
