@@ -56,6 +56,7 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
           try {
             cmd.execSync(tapSsh)
             _event.sender.send('init-success')
+            vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
           } catch (e) {
             xiaokuError(`初始化失败：${e}`)
             _event.sender.send('init-error', e)
@@ -63,6 +64,7 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
           return
         } else {
           _event.sender.send('init-success')
+          vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
           return
         }
       } else {
