@@ -22,6 +22,7 @@ ipcMain.on('getLocalLanguage', (_event: IpcMainEvent) => {
  * 刷新界面
  */
 ipcMain.on('relaunch', () => {
+  vpnDb.default.set(VPN_ENUM.NORMALLY_CLOSED, true).write()
   global.mainWindow.reload()
 })
 

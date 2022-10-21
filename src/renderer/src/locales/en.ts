@@ -56,11 +56,19 @@ export default {
       title: 'Connect VPN',
       connecting: 'Connecting',
       success: 'Success VPN',
-      closeVpn: 'Close VPN'
+      closeVpn: 'Close VPN',
+      inTheClosed: 'In the closed'
     }
   },
   tools: {
     printer: 'Printer',
     selfHelp: 'SelfHelp'
+  },
+  update: {
+    updateRepeatTxt: 'Do not repeat the update',
+    noNewVersionTxt: 'No new version is currently available',
+    success: 'The update is complete and takes effect upon restart',
+    restart: 'Restart',
+    later: 'Later'
   }
 }

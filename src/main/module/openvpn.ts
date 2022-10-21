@@ -3,6 +3,7 @@ import { xiaokuDebug, xiaokuError, xiaokuInfo, xiaokuOpenvpnConnectLog } from '.
 import db from '../store/config'
 import * as vpnDb from '../store/vpn'
 import path from 'path'
+import fs from 'fs'
 import cmd from 'child_process'
 const { Telnet } = require('telnet-client')
 import { aesDecrypt } from '../common/decrypt'
@@ -17,6 +18,13 @@ type OpenvpnStartStatus = {
   connectIp?: string
   remark?: string
 }
+
+ipcMain.on(
+  'change_proxy',
+  (_event: IpcMainEvent, proxy: string, pac: string, ip: string, port: string) => {
+    proxy_change(proxy, pac, ip, port)
+  }
+)
 
 /**
  * 监听VPN连接按钮
@@ -68,6 +76,7 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
           })
       }
     } else {
+      _event.sender.send('dont_init')
       startOpenvpn(_event)
         .then((result: OpenvpnStartStatus) => {
           _event.sender.send('openvpn-start-status', result)
@@ -201,19 +210,19 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         : vpnDb.default.get(VPN_ENUM.VPN_PORT).value()
     let ssh = ''
     const configName = vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value()
+    const config = `"${db.get(BASE.APP_PATH).value() + '/assets/config/'}qunheVPN-${
+      configName === undefined ? 'slb' : configName
+    }.ovpn"`
     if (type === 'darwin') {
       ssh =
         `"/Library/Application Support/xiaoku-app/macos/openvpn-executable" ` +
         `--cd "/Library/Application Support/xiaoku-app/" ` +
-        `--config "./config/qunheVPN-${configName === undefined ? 'slb' : configName}.ovpn" ` +
+        `--config "${config}" ` +
         `--management 127.0.0.1 ${port} --auth-retry interact --management-query-passwords ` +
         `--management-hold --script-security 2 ` +
         `--up "./macos/dns.sh" ` +
         `--down "./macos/close.sh"`
     } else {
-      const config = `"${db.get(BASE.APP_PATH).value() + '/assets/config/'}qunheVPN-${
-        configName === undefined ? 'slb' : configName
-      }.ovpn"`
       ssh = `"${path.join(
         db.get(BASE.APP_PATH).value(),
         '/assets/windows/openvpn.exe'
@@ -240,9 +249,11 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
     shell.once('close', (code: number, signal: NodeJS.Signals) => {
       const error = `Openvpn进程关闭: ${code},signal: ${signal}`
       xiaokuError(error)
-      if (code !== 0) {
+      if (code !== 0 && code !== null) {
         _reject({ status: false, remark: error })
         return
+      } else {
+        _event.sender.send('complete_close')
       }
     })
 
@@ -362,7 +373,7 @@ function initOpenvpn(): Promise<boolean> {
 function closeVpn(openvpnProcess: cmd.ChildProcess): Promise<boolean> {
   return new Promise((_resolve, _reject) => {
     try {
-      const pid = openvpnProcess.pid
+      // const pid = openvpnProcess.pid
       connection && connection.send('signal SIGTERM')
       connection && connection.end()
       if (openvpnProcess) {
@@ -434,10 +445,10 @@ function connectOpenVPNSocket(
     'hold off',
     'hold release'
   ]
-  // let networkIn = 0
-  // let networkOut = 0
-  // let oldNetworkIn = 0
-  // let oldNetworkOut = 0
+  let networkIn = 0
+  let networkOut = 0
+  let oldNetworkIn = 0
+  let oldNetworkOut = 0
   connection.on('data', (data: string) => {
     // 判断是否要求输入密码了
     if (data && data.indexOf("Need 'Auth' username/password") !== -1) {
@@ -450,12 +461,12 @@ function connectOpenVPNSocket(
     if (data && data.indexOf('>BYTECOUNT:') !== -1) {
       xiaokuDebug(`接收到的DATA: ${data}`)
       data = String(data).replace('>BYTECOUNT:', '')
-      // networkIn = Number(data.split(',')[0]) - oldNetworkIn
-      // networkOut = Number(data.split(',')[1]) - oldNetworkOut
-      //   mainWindow.webContents.send('network_traffic_in', fomartNetwork(networkIn))
-      //   mainWindow.webContents.send('network_traffic_out', fomartNetwork(networkOut))
-      // oldNetworkIn = Number(data.split(',')[0])
-      // oldNetworkOut = Number(data.split(',')[1])
+      networkIn = Number(data.split(',')[0]) - oldNetworkIn
+      networkOut = Number(data.split(',')[1]) - oldNetworkOut
+      global.mainWindow.webContents.send('network_traffic_in', fomartNetwork(networkIn))
+      global.mainWindow.webContents.send('network_traffic_out', fomartNetwork(networkOut))
+      oldNetworkIn = Number(data.split(',')[0])
+      oldNetworkOut = Number(data.split(',')[1])
     }
   })
   // 循环输出命令
@@ -467,4 +478,132 @@ function connectOpenVPNSocket(
       }, 50 * (t + 1)) // 还是每秒执行一次，不是累加的
     })(j) // 注意这里是实参，这里把要用的参数传进去
   }
+}
+
+/**
+ * 格式化实时流量单位
+ * @param {*} bytes
+ * @returns
+ */
+function fomartNetwork(bytes: any): void {
+  if (bytes >= 1073741824) {
+    bytes = Math.round((bytes / 1073741824) * 100) / 100 + '/Gb'
+  } else if (bytes >= 1048576) {
+    bytes = Math.round((bytes / 1048576) * 100) / 100 + '/Mb'
+  } else if (bytes >= 1024) {
+    bytes = Math.round((bytes / 1024) * 100) / 100 + '/kb'
+  } else {
+    bytes = bytes + '/bytes'
+  }
+  return bytes
+}
+
+/**
+ * 设置代理
+ * @param arg 模式
+ * @param pac pac地址
+ * @param ip sockert IP 地址
+ * @param port 端口
+ */
+function proxy_change(arg: string, pac: string, ip: string, port: string): void {
+  let shellCmd
+  if (process.platform === 'darwin') {
+    shellCmd = `"/Library/Application Support/xiaoku-app/macos/proxy_conf_helper" -m`
+    switch (arg) {
+      case 'off':
+        shellCmd = `${shellCmd} off`
+        break
+      case 'pac':
+        shellCmd = `${shellCmd} auto -u ${pac}`
+        break
+      case 'all':
+        shellCmd = `${shellCmd} global -l ${ip} -p ${port} -r ${port} -s ${ip} -x "*.qunhequnhe.com,*.kujiale.com,*.meijian.com,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,127.0.0.1"`
+        break
+      default:
+        shellCmd = `${shellCmd} off`
+        break
+    }
+  } else {
+    shellCmd = `"${path.join(db.get(BASE.APP_PATH).value(), '/assets/windows/sysproxy.exe')}"`
+    switch (arg) {
+      case 'off':
+        shellCmd = `${shellCmd} set 1 - - - `
+        break
+      case 'pac':
+        if (pac) {
+          shellCmd = `${shellCmd} pac ${pac}`
+        }
+        break
+      case 'all':
+        if (ip && port) {
+          shellCmd = `${shellCmd} global ${ip}:${port} "*.qunhequnhe.com;*.kujiale.com;*.meijian.com;192.*;10.*;172.*;127.0.0.1"`
+        }
+        break
+      default:
+        shellCmd = `${shellCmd} set 1 - - - `
+        break
+    }
+  }
+  vpnDb.default.set(VPN_ENUM.PROXY, arg).write()
+  cmd.exec(shellCmd, (err, data, stderr) => {
+    if (err || stderr) {
+      xiaokuError(`err: ${err},stderr: ${stderr}`)
+    }
+    xiaokuDebug(data)
+  })
+}
+
+ipcMain.on('initConfigList', (_event: IpcMainEvent, configs: any) => {
+  initConfigList(configs)
+    .then((result: any) => {
+      _event.sender.send('initConfigList', result)
+    })
+    .catch((err) => {
+      xiaokuError(err)
+    })
+})
+
+function initConfigList(configs): Promise<any> {
+  const newConfigList = new Map()
+  return new Promise((resolve, rejects) => {
+    const crypto = require('crypto')
+    const filePath = db.get(BASE.APP_PATH).value() + '/assets/config/'
+    fs.readdir(filePath, async function (err, files) {
+      if (err) {
+        xiaokuError(err.message)
+        // fs.mkdirSync(filePath)
+      }
+      const map = new Map()
+      //遍历读取到的文件列表
+      files &&
+        files.forEach(function (filename) {
+          //获取当前文件的绝对路径
+          const filedir = path.join(filePath, filename)
+          //读取一个Buffer
+          const buffer = fs.readFileSync(filedir)
+          const fsHash = crypto.createHash('sha256')
+          fsHash.update(buffer)
+          const md5 = fsHash.digest('hex')
+          map.set(filename, md5)
+        })
+      // config.url, path.join(filePath, config.configName)
+      configs.map((config: any) => {
+        if (config.md5 != map.get(config.configName)) {
+          const { net } = require('electron')
+          const request = net.request(config.url)
+          request.on('response', (response) => {
+            response.on('data', (chunk) => {
+              // console.log(`BODY: ${chunk}`)
+              fs.writeFileSync(path.join(filePath, config.configName), chunk, 'binary')
+              newConfigList.set(config.url.split('/')[config.url.split('/').length - 1], true)
+            })
+            response.on('end', () => {
+              resolve(newConfigList)
+            })
+          })
+          request.end()
+        }
+      })
+    })
+  })
 }

@@ -39,5 +39,7 @@ export enum VPN_ENUM {
   VPN_PORT = 'vpnPort',
   CONFIG_VALUE = 'configValue',
   SECRET_KEY = 'H!o18u$@%^',
-  SECRET_KEY_IV = 'H1u@@#*U(*'
+  SECRET_KEY_IV = 'H1u@@#*U(*',
+  PROXY = 'proxy',
+  NORMALLY_CLOSED = 'normallyClosed'
 }

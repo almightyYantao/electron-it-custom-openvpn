@@ -162,7 +162,6 @@ function getUserInfo(token: string, ldap: string): Promise<any> {
       })
       response.on('end', () => {
         try {
-          console.log(data, token, ldap)
           const json = JSON.parse(data)
           const field = {
             ldapId: json.ldapId,

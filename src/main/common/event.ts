@@ -17,6 +17,7 @@ ipcMain.on('vpnDbGet', (_event: IpcMainEvent, field: string) => {
  */
 ipcMain.on('vpnDbSet', (_event: IpcMainEvent, field: string, value: any) => {
   if (db !== null) {
+    console.log(field, value)
     db.set(field, value).write()
   }
 })

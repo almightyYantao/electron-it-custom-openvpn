@@ -14,7 +14,6 @@ function Login(): JSX.Element {
 
   const onFinish = (values: any): void => {
     setLoginLoading(true)
-    console.log('Success:', values)
     window.electron.ipcRenderer.send('login', values.username, values.password)
     window.electron.ipcRenderer.once('login-success', (_event: Event, json: any) => {
       window.electron.ipcRenderer.removeAllListeners('login-error')

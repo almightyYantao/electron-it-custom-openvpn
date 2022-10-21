@@ -56,11 +56,19 @@ export default {
       title: '连接VPN',
       connecting: '连接中',
       success: '成功连接VPN',
-      closeVpn: '断开VPN'
+      closeVpn: '断开VPN',
+      inTheClosed: '断开中'
     }
   },
   tools: {
     printer: '打印机',
     selfHelp: '自助服务'
+  },
+  update: {
+    noNewVersionTxt: '当前没有可用的新版本',
+    updateRepeatTxt: '请勿重复更新',
+    success: '更新完成，重启生效',
+    restart: '重启',
+    later: '稍后'
   }
 }

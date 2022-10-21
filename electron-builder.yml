@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: xiaoku-helper
+appId: com.qunhe.its.app
+productName: 小酷助手
 directories:
   buildResources: build
 extraResources:
@@ -33,6 +33,7 @@ nsis:
   allowElevation: true
   allowToChangeInstallationDirectory: true
   createStartMenuShortcut: true
+
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   icon: build/icon.png

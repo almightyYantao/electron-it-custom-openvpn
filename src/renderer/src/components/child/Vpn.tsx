@@ -1,11 +1,23 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Config, getConfigList } from '@renderer/api/vpnConfig'
-import { Button, Space, Select, Modal, Drawer, Spin, message } from 'antd'
+import {
+  Button,
+  Space,
+  Select,
+  Modal,
+  Drawer,
+  Spin,
+  message,
+  Radio,
+  RadioChangeEvent,
+  Tooltip
+} from 'antd'
 import { useEffect, useState } from 'react'
 import '@renderer/assets/vpn.less'
 import { useTranslation } from 'react-i18next'
 import Network from './Network'
 import { useNavigate } from 'react-router-dom'
+import { BulbOutlined, CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons'
 
 const { Option } = Select
 
@@ -30,6 +42,9 @@ function VPN(): JSX.Element {
   const [networkDrawerStatus, setNetworkDrawerStatus] = useState(false)
   const [initLoading, setInitLoading] = useState(false)
   const [timeConsuming, setTimeConsuming] = useState(0)
+  const [connectingUp, setConnectingUp] = useState('')
+  const [connectingDown, setConnectingDown] = useState('')
+  const [connectProxyValue, setConnectProxyValue] = useState('off')
 
   const navigate = useNavigate()
 
@@ -46,6 +61,7 @@ function VPN(): JSX.Element {
         setUseConfig(res[0].configValue)
       }
       setConfigs(res)
+      initConfig(res)
     })
   }
 
@@ -60,9 +76,35 @@ function VPN(): JSX.Element {
   }
 
   /**
+   * 初始化配置文件
+   */
+  const initConfig = (configs: Config[]) => {
+    window.electron.ipcRenderer.send('initConfigList', configs)
+    window.electron.ipcRenderer.once(
+      'initConfigList',
+      (_event: Event, arg: Map<string, boolean>) => {
+        arg.forEach((_value, key) => {
+          message.success(`更新完成「${key}」配置文件`)
+        })
+      }
+    )
+  }
+
+  /**
    * 初始化组件
    */
   useEffect(() => {
+    window.electron.ipcRenderer.removeAllListeners('alter_windows_openvpn_connect')
+    window.electron.ipcRenderer.removeAllListeners('initConfigList')
+    window.electron.ipcRenderer.on(
+      'alter_windows_openvpn_connect',
+      (_event: Event, content: string, title: string) => {
+        Modal.error({
+          title: title,
+          content: content
+        })
+      }
+    )
     window.electron.ipcRenderer.send('isTokenValid')
     window.electron.ipcRenderer.once('isTokenValid', (_event: Event, isTokenValid: boolean) => {
       console.log(isTokenValid)
@@ -118,6 +160,7 @@ function VPN(): JSX.Element {
         window.electron.ipcRenderer.once(
           'vpnDbGet-connectStatus.status',
           (_event: Event, arg: boolean) => {
+            // setSuccessStatus()
             console.log(arg)
             if (arg === true) {
               setSuccessStatus()
@@ -132,6 +175,11 @@ function VPN(): JSX.Element {
             }
           }
         )
+        window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
+        window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
+          console.log(arg)
+          setConnectProxyValue(arg)
+        })
         window.electron.ipcRenderer.send('getLocalHostNetwork')
         window.electron.ipcRenderer.once('setLocalHostNetwork', (_event: Event, arg: string) => {
           setLocalNetwork(arg)
@@ -164,15 +212,6 @@ function VPN(): JSX.Element {
       console.log('禁止操作阶段')
       return
     }
-    setTimeConsuming(new Date().getTime())
-    // 设置3秒后按钮可操作
-    setTimeout(() => {
-      sessionStorage.setItem('just-started', 'false')
-    }, 3000)
-    // 设置链接中的标题和状态
-    setConnectingClass(connectingClass + ' connect-status-ing')
-    setConnectingStatus(true)
-    setTitle(t('vpn.connect.connecting'))
     window.electron.ipcRenderer.send('openvpn-start')
     // 发送设置当前链接中的状态
     window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', true)
@@ -182,47 +221,64 @@ function VPN(): JSX.Element {
     window.electron.ipcRenderer.once('init-success', () => {
       message.success(t('vpn.init.success'))
       setInitLoading(false)
-      closeVpn()
+      initVpnText()
     })
     window.electron.ipcRenderer.once('init-error', (_event: Event, arg: any) => {
       message.error(t('vpn.init.error') + ': ' + arg)
       setInitLoading(false)
-      closeVpn()
+      initVpnText()
     })
 
-    /**
-     * 设置一个延时检测
-     */
-    // setTimeout(() => {
-    //   if (connectStatus !== true) {
-    //     Modal.error({
-    //       title: 'VPN Connect Error',
-    //       content: '连接超时，请联系IT桌面运维'
-    //     })
-    //     closeVpn()
-    //   }
-    // }, 30000)
+    localStorage.setItem('timeConsuming', String(new Date().getTime()))
+    // 设置3秒后按钮可操作
+    setTimeout(() => {
+      sessionStorage.setItem('just-started', 'false')
+    }, 3000)
+    window.electron.ipcRenderer.once('dont_init', () => {
+      // 设置链接中的标题和状态
+      setConnectingClass(connectingClass + ' connect-status-ing')
+      setConnectingStatus(true)
+      setTitle(t('vpn.connect.connecting'))
 
-    /**
-     * 监听后端的连接状态返回
-     */
-    window.electron.ipcRenderer.once('openvpn-start-status', (_event: Event, arg: any) => {
-      const status = arg.status
-      const remark = arg.remark
-      window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', false)
-      if (status == true) {
-        setSuccessStatus()
-        setRemoteNetwork(arg.connectIp)
-      } else {
-        Modal.error({
-          title: 'VPN Connect Error',
-          content: remark
-        })
-        closeVpn()
-      }
-    })
-    window.electron.ipcRenderer.on('setConnectingLog', (_event: Event, arg: string) => {
-      setConnectingLog(arg)
+      /**
+       * 设置一个延时检测
+       */
+      // setTimeout(() => {
+      //   if (connectStatus !== true) {
+      //     Modal.error({
+      //       title: 'VPN Connect Error',
+      //       content: '连接超时，请联系IT桌面运维'
+      //     })
+      //     closeVpn()
+      //   }
+      // }, 30000)
+
+      /**
+       * 监听后端的连接状态返回
+       */
+      window.electron.ipcRenderer.once('openvpn-start-status', (_event: Event, arg: any) => {
+        const status = arg.status
+        const remark = arg.remark
+        window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', false)
+        if (status == true) {
+          // 计算从点击到完成的耗时
+          localStorage.setItem(
+            'timeConsuming',
+            String(new Date().getTime() - Number(localStorage.getItem('timeConsuming')))
+          )
+          setSuccessStatus()
+          setRemoteNetwork(arg.connectIp)
+        } else {
+          Modal.error({
+            title: 'VPN Connect Error',
+            content: remark
+          })
+          closeVpn()
+        }
+      })
+      window.electron.ipcRenderer.on('setConnectingLog', (_event: Event, arg: string) => {
+        setConnectingLog(arg)
+      })
     })
   }
 
@@ -239,22 +295,48 @@ function VPN(): JSX.Element {
     window.electron.ipcRenderer.removeAllListeners('init-start')
     window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
     setConnectingStatus(false)
+    setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     setConnectingLog('')
-    // 计算从点击到完成的耗时
-    setTimeConsuming((per) => new Date().getTime() - per)
+    window.electron.ipcRenderer.on('network_traffic_out', (_event: Event, arg: string) => {
+      setConnectingUp(arg)
+    })
+    window.electron.ipcRenderer.on('network_traffic_in', (_event: Event, arg: string) => {
+      setConnectingDown(arg)
+    })
+    setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
+    window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
+    window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
+      setConnectProxyValue(!arg ? 'off' : arg)
+      proxyChange(arg)
+    })
   }
 
   /**
    * 断开VPN
    */
   const closeVpn = () => {
+    setTitle(t('vpn.connect.inTheClosed'))
+    setConnectingClass(connectingClass + ' connect-status-ing')
+    window.electron.ipcRenderer.send('openvpn-close')
+    window.electron.ipcRenderer.once('complete_close', () => {
+      initVpnText()
+    })
+  }
+
+  /**
+   * 初始化界面状态
+   */
+  const initVpnText = () => {
     setConnectingClass('connect-status')
     setConnectStatus(false)
     setTitle(t('vpn.connect.title'))
     setConnectCLass('circle')
     setConnectingStatus(false)
-    window.electron.ipcRenderer.send('openvpn-close')
     window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
+    window.electron.ipcRenderer.removeAllListeners('openvpn-start-status')
+    window.electron.ipcRenderer.removeAllListeners('network_traffic_out')
+    window.electron.ipcRenderer.removeAllListeners('network_traffic_in')
+    window.electron.ipcRenderer.removeAllListeners('dont_init')
     setConnectingLog('')
     setRemoteNetwork('')
   }
@@ -267,6 +349,24 @@ function VPN(): JSX.Element {
   }
   const onCloseNetworkDrawer = () => {
     setNetworkDrawerStatus(false)
+  }
+
+  /**
+   * 代理切换
+   * @param e
+   */
+  const redioProxyChange = (e: RadioChangeEvent) => {
+    proxyChange(e.target.value)
+  }
+
+  const proxyChange = (value: string) => {
+    setConnectProxyValue(value)
+    configs?.map((item: Config) => {
+      if (item.configValue === useConfig) {
+        window.electron.ipcRenderer.send('change_proxy', value, item.pac, item.ip, item.port)
+        return
+      }
+    })
   }
 
   /**
@@ -322,6 +422,61 @@ function VPN(): JSX.Element {
             </div>
           </div>
           <span className="connecting-log">{connectingLog}</span>
+          {connectStatus ? (
+            <span className="connecting-up-down">
+              <CaretUpOutlined />
+              {connectingUp}
+              <CaretDownOutlined />
+              {connectingDown}
+            </span>
+          ) : null}
+          {connectStatus ? (
+            <div className="connect-proxy">
+              <Radio.Group
+                value={connectProxyValue}
+                buttonStyle="solid"
+                onChange={redioProxyChange}
+              >
+                <Radio.Button value="off">公司内网</Radio.Button>
+                <Radio.Button value="pac">极速模式</Radio.Button>
+                <Radio.Button value="all">全局模式</Radio.Button>
+              </Radio.Group>
+              <Tooltip
+                // color={'orange'}
+                style={{ width: '250px' }}
+                title={
+                  <span style={{ textAlign: 'left' }}>
+                    <span>
+                      <b>公司内网: </b>
+                    </span>
+                    仅接入公司内网
+                    <br />
+                    <span>
+                      <b>极速模式: </b>
+                    </span>
+                    可访问内网+常用海外站点 <br />
+                    <span>
+                      <b>全局模式: </b>
+                    </span>
+                    全部流量通过国际线路,延迟较大
+                    <br />
+                    <span style={{ color: '#ee7621' }}>
+                      <b>特别提醒: </b>
+                    </span>
+                    <br />
+                    <span style={{ width: '10px', display: 'inline-block' }}>1</span>
+                    、国际线路有日志审计，
+                    <span style={{ color: '#ee7621' }}>仅供工作使用！</span>
+                    <br />
+                    <span style={{ width: '10px', display: 'inline-block' }}>2</span>
+                    、如装有浏览器代理插件，需设置为【系统代理】
+                  </span>
+                }
+              >
+                <BulbOutlined style={{ marginLeft: '10px' }} />
+              </Tooltip>
+            </div>
+          ) : null}
           {connectStatus ? (
             <div className="vpn-body-nav">
               <span className="vpn-body-nav-title">指路牌</span>
