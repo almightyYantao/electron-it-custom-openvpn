@@ -43,6 +43,17 @@ function createWindow(): void {
     }
   })
 
+  // 初始化基础配置
+  db.set(
+    BASE.APP_PATH,
+    path.join(
+      app.getAppPath().replace(/\\/g, '\\\\').replace('\\\\app.asar', '').replace('/app.asar', ''),
+      '/static'
+    )
+  ).write()
+  db.set(BASE.VERSION, app.getVersion()).write()
+  db.set(BASE.STATIC_PATH, path.join(__dirname, '/static').replace(/\\/g, '\\\\')).write()
+
   require('@electron/remote/main').enable(global.mainWindow.webContents)
 
   // globalShortcut.register('F12', function () {
@@ -164,7 +175,7 @@ if (!gotTheLock) {
 
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.qunhe.its.app')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -173,16 +184,6 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
   createWindow()
-  // 初始化基础配置
-  db.set(
-    BASE.APP_PATH,
-    path.join(
-      app.getAppPath().replace(/\\/g, '\\\\').replace('\\\\app.asar', '').replace('/app.asar', ''),
-      '/static'
-    )
-  ).write()
-  db.set(BASE.VERSION, app.getVersion()).write()
-  db.set(BASE.STATIC_PATH, path.join(__dirname, '/static').replace(/\\/g, '\\\\')).write()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
