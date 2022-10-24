@@ -149,6 +149,10 @@ ipcMain.on('releasePort', (_event: IpcMainEvent) => {
   })
 })
 
+/**
+ * 强制释放端口
+ * @returns
+ */
 function releasePort(): Promise<boolean> {
   return new Promise((_resolve) => {
     const options = {
@@ -293,6 +297,10 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         // 启动完成后进行数据分割，判断是否连接成功或者失败
         const mg = data.substring(subIndex).split(',')
         _event.sender.send('openvpn_event', mg[1], mg[2])
+        xiaokuInfo(`openvpn_event: ${mg[1]} - ${mg[2]}`)
+        if (mg[2] === 'init_instance') {
+          cleanDns()
+        }
         if (mg[1] === 'CONNECTED' && mg[2] === 'SUCCESS') {
           // event.sender.send('vpnSuccess')
           // event.sender.send('vpn-ip', mg[3])
@@ -307,6 +315,22 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
 }
 
 /**
+ * 清理DNS
+ */
+function cleanDns(): void {
+  if (process.platform === 'darwin') {
+    const shellCmd = `"/Library/Application Support/xiaoku-app/macos/proxy_conf_helper" -d ""`
+    cmd.exec(shellCmd, (error, stdout, stderr) => {
+      if (error || stderr) {
+        xiaokuError(`error: ${error},stderr: ${stderr}`)
+      } else {
+        xiaokuInfo(stdout)
+      }
+    })
+  }
+}
+
+/**
  * 统一处理OpenVpn的链接信息
  */
 function openvpnStatus(data: string): Promise<boolean> {
@@ -318,9 +342,12 @@ function openvpnStatus(data: string): Promise<boolean> {
     ) {
       _reject(`网卡被占用，请检查是否拥有其他VPN占用了网卡，或重启电脑释放网卡`)
     } else if (data.indexOf('Socket bind failed on local address') != -1) {
-      _reject(`端口被占用，请修改当前连接端口`)
+      // 如果检测到端口被占用了，那么就强制释放一次，然后在重新连接
+      releasePort().then(() => {
+        _reject(`检测到端口被占用，以强制释放，请重新连接`)
+      })
     } else if (data.indexOf('AUTH_FAILED') != -1) {
-      _reject(`账号密码错误，请重新登录小酷`)
+      _reject(`账号密码错误，请重新登录小酷助手`)
     } else if (data.indexOf('Address already in use') != -1) {
       _reject(`Address already in use (errno=48)`)
     }

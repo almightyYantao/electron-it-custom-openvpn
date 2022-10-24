@@ -2,7 +2,7 @@
 
 小酷助手桌面端  
 ---
-Electron: (https://www.electronjs.org/zh/docs/latest)
+Electron: (https://www.electronjs.org/zh/docs/latest)  
 前端技术宅:   
 - Vite: (https://cn.vitejs.dev/guide/env-and-mode.html)
 - React: (https://reactjs.org/)

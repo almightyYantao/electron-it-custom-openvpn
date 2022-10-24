@@ -22,6 +22,6 @@ killall -HUP mDNSResponder
 
 kill -9 $(ps -ef | grep openvpn-executable | grep -v grep | awk '{ print $2 }')
 
-"/Library/Application Support/xiaoku-app/macos/proxy_conf_helper" -m off;
+"/Library/Application Support/xiaoku-app/macos/proxy_xiaoku_helper" -m off;
 
 echo done;

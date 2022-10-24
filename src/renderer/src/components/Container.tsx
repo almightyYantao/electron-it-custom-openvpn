@@ -25,6 +25,8 @@ function Container(): JSX.Element {
   const [badgeUpdate, setBadgeUpdate] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [percentage, setPercontage] = useState(0)
+  const [avatar, setAvatar] = useState('')
+  const [ldap, setLdap] = useState('')
 
   const onInputRadio = (value: number) => {
     // 先判断下现在是不是在连接VPN的状态，如果是的话，那么就禁止切换
@@ -64,6 +66,8 @@ function Container(): JSX.Element {
         setCheckedMap({ [3]: true })
         break
     }
+    setAvatar(String(localStorage.getItem('avatar')))
+    setLdap(String(localStorage.getItem('username')))
     window.electron.ipcRenderer.send('checkForUpdate')
     window.electron.ipcRenderer.on('autoUpdate', (_event: Event, arg) => {
       console.log(arg)
@@ -154,10 +158,8 @@ function Container(): JSX.Element {
       <div className="left">
         <div className="left-nav-body">
           <span className="left-nav-logo">
-            <Avatar
-              src="http://wework.qpic.cn/wwhead/dx4Y70y9XcvSiazHvUicn0E2Rz1J0OWSpKcPDgoqiaSwOyLJxoOpfcxPwWlKiccH3XgHXoJ4Ogh9Mak/0"
-              size={50}
-            />
+            <Avatar src={avatar} size={50} />
+            <span className="left-nav-logo-ldap">{ldap}</span>
           </span>
           <div>
             <input

@@ -10,6 +10,11 @@ module.exports = async (context) => {
     return
   }
 
+  if (process.env.CI == false) {
+    console.log(process.env.CI, `skipping notarizing, not in CI.`)
+    return
+  }
+
   if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
     console.warn('skipping notarizing, APPLE_ID and APPLE_ID_PASS env variables must be set.')
     return

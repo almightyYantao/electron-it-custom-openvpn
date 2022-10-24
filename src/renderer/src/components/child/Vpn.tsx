@@ -17,7 +17,7 @@ import '@renderer/assets/vpn.less'
 import { useTranslation } from 'react-i18next'
 import Network from './Network'
 import { useNavigate } from 'react-router-dom'
-import { BulbOutlined, CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons'
+import { BulbOutlined, CaretDownOutlined, CaretUpOutlined, RedoOutlined } from '@ant-design/icons'
 
 const { Option } = Select
 
@@ -66,6 +66,10 @@ function VPN(): JSX.Element {
       if (name === null || name === undefined) {
         configOnChange(res[0].configValue)
       }
+      if (configMap[name] && configMap[name]?.pac) {
+        console.log(proxyActive)
+        sessionStorage.setItem('proxyActive', String(true))
+      }
       setConfigs(res)
       initConfig(res)
     })
@@ -98,6 +102,7 @@ function VPN(): JSX.Element {
         })
       }
     )
+    message.success(`所有配置文件更新完成`)
   }
 
   /**
@@ -182,6 +187,10 @@ function VPN(): JSX.Element {
                   setRemoteNetwork(arg)
                 }
               )
+              // 判断当前代理是否需要展示
+              if (sessionStorage.getItem('proxyActive') === 'true') {
+                setProxyActive(true)
+              }
             }
           }
         )
@@ -267,18 +276,6 @@ function VPN(): JSX.Element {
     setConnectingStatus(true)
     setTitle(t('vpn.connect.connecting'))
     openvpnEventChange()
-    /**
-     * 设置一个延时检测
-     */
-    // setTimeout(() => {
-    //   if (connectStatus !== true) {
-    //     Modal.error({
-    //       title: 'VPN Connect Error',
-    //       content: '连接超时，请联系IT桌面运维'
-    //     })
-    //     closeVpn()
-    //   }
-    // }, 30000)
 
     /**
      * 监听后端的连接状态返回
@@ -336,8 +333,9 @@ function VPN(): JSX.Element {
       setConnectProxyValue(!arg ? 'off' : arg)
       proxyChange(arg)
     })
-    if (sessionStorage.getItem('proxyActive') === String(true)) {
+    if (configMap[useConfig] && configMap[useConfig]?.pac) {
       setProxyActive(true)
+      sessionStorage.setItem('proxyActive', String(true))
     }
   }
 
@@ -424,20 +422,26 @@ function VPN(): JSX.Element {
             </Button>
           </Space>
           <div>
-            <Select
-              value={useConfig}
-              disabled={connectStatus}
-              onChange={configOnChange}
-              className="vpn-top-tool-config"
-            >
-              {configs && configs?.length > 0 ? (
-                configs?.map((item: Config) => {
-                  return <Option key={item.configValue}>{item.configTitle}</Option>
-                })
-              ) : (
-                <Option key={useConfig}>加载中...</Option>
-              )}
-            </Select>
+            <Space>
+              <RedoOutlined
+                style={{ cursor: 'pointer' }}
+                onClick={() => getConfig(String(localStorage.getItem('username')), useConfig)}
+              />
+              <Select
+                value={useConfig}
+                disabled={connectStatus}
+                onChange={configOnChange}
+                className="vpn-top-tool-config"
+              >
+                {configs && configs?.length > 0 ? (
+                  configs?.map((item: Config) => {
+                    return <Option key={item.configValue}>{item.configTitle}</Option>
+                  })
+                ) : (
+                  <Option key={useConfig}>加载中...</Option>
+                )}
+              </Select>
+            </Space>
           </div>
         </div>
         <span style={{ color: connectStatus ? '#000' : '#fff' }}>

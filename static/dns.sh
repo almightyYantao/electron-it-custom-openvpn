@@ -43,7 +43,7 @@ echo $DNS_SERVERS;
 # done
 
 if [ "$PAC_URL" != "" ] ; then
- /Library/Application\ Support/xiaoku-app/macos/proxy_conf_helper -m auto -u $PAC_URL;
+ /Library/Application\ Support/xiaoku-app/macos/proxy_xiaoku_helper -m auto -u $PAC_URL;
 fi
 
 echo done;
