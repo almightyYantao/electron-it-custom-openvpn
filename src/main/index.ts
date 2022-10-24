@@ -37,6 +37,7 @@ function createWindow(): void {
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,
+      webviewTag: true,
       nodeIntegration: true,
       // 官网似乎说是默认false，但是这里必须设置contextIsolation
       contextIsolation: false

@@ -67,7 +67,7 @@ function Container(): JSX.Element {
         break
     }
     setAvatar(String(localStorage.getItem('avatar')))
-    setLdap(String(localStorage.getItem('username')))
+    setLdap(String(localStorage.getItem('name')))
     window.electron.ipcRenderer.send('checkForUpdate')
     window.electron.ipcRenderer.on('autoUpdate', (_event: Event, arg) => {
       console.log(arg)

@@ -2,7 +2,7 @@ import { app, ipcMain, IpcMainEvent } from 'electron'
 import { xiaokuDebug } from '../common/log'
 import db from '../store/config'
 import * as vpnDb from '../store/vpn'
-import { BASE, USER, VPN_ENUM } from '../common/enumeration'
+import { BASE, VPN_ENUM } from '../common/enumeration'
 
 /**
  * 设置语言
@@ -42,13 +42,6 @@ ipcMain.on('setOpenAtLogin', (_event: IpcMainEvent, arg) => {
     })
   }
   xiaokuDebug(String(app.getLoginItemSettings().openAtLogin))
-})
-
-/**
- * 退出登录
- */
-ipcMain.on('exitLogin', () => {
-  db.set(USER.EXIT_AUTO_LOGIN, false).write()
 })
 
 /**

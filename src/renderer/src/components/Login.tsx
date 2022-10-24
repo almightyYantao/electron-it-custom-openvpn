@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import '@renderer/assets/login.less'
 import { useTranslation } from 'react-i18next'
-import { Button, Checkbox, Form, Input, Modal, Spin } from 'antd'
+import { Button, Checkbox, Divider, Form, Input, Modal, Spin } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { FieldData } from 'rc-field-form/lib/interface'
 import { CheckboxChangeEvent } from 'antd/lib/checkbox'
@@ -20,6 +20,7 @@ function Login(): JSX.Element {
       window.electron.ipcRenderer.removeAllListeners('login-error')
       localStorage.setItem('avatar', json.avatar)
       localStorage.setItem('username', json.ldapId)
+      localStorage.setItem('name', json.name)
       setLoginLoading(false)
       // 跳转到VPN的页面
       navigate('/vpn')
@@ -77,41 +78,69 @@ function Login(): JSX.Element {
         <span className="login__left__content">{t('base.login.left')}</span>
       </div>
       <div className="login__right">
-        <Spin spinning={loginLoading}>
-          <Form
-            fields={fields}
-            name="basic"
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            onFinish={onFinish}
-            onFinishFailed={onFinishFailed}
-            autoComplete="off"
-          >
-            <Form.Item
-              label={t('base.login.username')}
-              name="username"
-              rules={[{ required: true, message: 'Please input your username!' }]}
+        <div className="login__right__body">
+          <Spin spinning={loginLoading}>
+            <span
+              className="login__right__language"
+              onClick={(): void => {
+                localStorage.setItem('localLanguage', 'zh')
+                window.electron.ipcRenderer.send('relaunch')
+              }}
             >
-              <Input />
-            </Form.Item>
+              {localStorage.getItem('localLanguage') === 'zh' ? <strong>中文</strong> : '中文'}
+            </span>
+            <Divider type="vertical"></Divider>
+            <span
+              className="login__right__language"
+              onClick={(): void => {
+                localStorage.setItem('localLanguage', 'cn')
+                window.electron.ipcRenderer.send('relaunch')
+              }}
+            >
+              {localStorage.getItem('localLanguage') === 'cn' ? (
+                <strong>English</strong>
+              ) : (
+                'English'
+              )}
+            </span>
+            <div className="login__right__from">
+              <Form
+                fields={fields}
+                labelAlign="left"
+                name="basic"
+                labelCol={{ span: 6 }}
+                wrapperCol={{ span: 18 }}
+                onFinish={onFinish}
+                onFinishFailed={onFinishFailed}
+                autoComplete="off"
+              >
+                <Form.Item
+                  label={t('base.login.username')}
+                  name="username"
+                  rules={[{ required: true, message: 'Please input your username!' }]}
+                >
+                  <Input />
+                </Form.Item>
 
-            <Form.Item
-              label={t('base.login.password')}
-              name="password"
-              rules={[{ required: true, message: 'Please input your password!' }]}
-            >
-              <Input.Password />
-            </Form.Item>
-            <div className="login__right__submit">
-              <Checkbox checked={remember} onChange={rememberMe}>
-                {t('base.login.rememberMe')}
-              </Checkbox>
-              <Button type="primary" htmlType="submit">
-                {t('base.login.submit')}
-              </Button>
+                <Form.Item
+                  label={t('base.login.password')}
+                  name="password"
+                  rules={[{ required: true, message: 'Please input your password!' }]}
+                >
+                  <Input.Password />
+                </Form.Item>
+                <div className="login__right__submit">
+                  <Checkbox checked={remember} onChange={rememberMe}>
+                    {t('base.login.rememberMe')}
+                  </Checkbox>
+                  <Button type="primary" htmlType="submit">
+                    {t('base.login.submit')}
+                  </Button>
+                </div>
+              </Form>
             </div>
-          </Form>
-        </Spin>
+          </Spin>
+        </div>
       </div>
     </div>
   )

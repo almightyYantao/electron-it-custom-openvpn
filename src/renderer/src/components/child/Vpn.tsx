@@ -16,8 +16,13 @@ import { useEffect, useState } from 'react'
 import '@renderer/assets/vpn.less'
 import { useTranslation } from 'react-i18next'
 import Network from './Network'
-import { useNavigate } from 'react-router-dom'
-import { BulbOutlined, CaretDownOutlined, CaretUpOutlined, RedoOutlined } from '@ant-design/icons'
+import {
+  BulbOutlined,
+  CaretDownOutlined,
+  CaretUpOutlined,
+  QuestionCircleOutlined,
+  RedoOutlined
+} from '@ant-design/icons'
 
 const { Option } = Select
 
@@ -46,10 +51,9 @@ function VPN(): JSX.Element {
   const [connectingDown, setConnectingDown] = useState('')
   const [connectProxyValue, setConnectProxyValue] = useState('off')
   const [openvpnStatusEvent, setOpenvpnStatusEvent] = useState('')
+  const [selfHelp, setSelfHelp] = useState(false)
   const [proxyActive, setProxyActive] = useState(false)
   const [configMap, setConfigMap] = useState({})
-
-  const navigate = useNavigate()
 
   /**
    * 获取配置文件
@@ -237,7 +241,7 @@ function VPN(): JSX.Element {
     window.electron.ipcRenderer.on(
       'openvpn_event',
       (_event: Event, event: string, value: string) => {
-        console.log(event, value)
+        console.log(openvpnStatusEvent, event, value)
         setOpenvpnStatusEvent(event)
         if (event === 'ADD_ROUTES') {
           sessionStorage.setItem('just-started', String(true))
@@ -386,6 +390,9 @@ function VPN(): JSX.Element {
   const onCloseNetworkDrawer = () => {
     setNetworkDrawerStatus(false)
   }
+  const onCloseSelfHelpDrawer = () => {
+    setSelfHelp(false)
+  }
 
   /**
    * 代理切换
@@ -453,9 +460,6 @@ function VPN(): JSX.Element {
             </Space>
           </div>
         </div>
-        <span style={{ color: connectStatus ? '#000' : '#fff' }}>
-          本次链接耗时:{timeConsuming}ms
-        </span>
         <div className="vpn-main-body">
           <div className={connectClass} onClick={startVpn}>
             <div className="circleTwo">
@@ -473,6 +477,13 @@ function VPN(): JSX.Element {
               {connectingUp}
               <CaretDownOutlined />
               {connectingDown}
+            </span>
+          ) : null}
+          {connectStatus ? (
+            <span
+              style={{ color: connectStatus ? '#000' : '#fff', position: 'relative', top: '30px' }}
+            >
+              本次链接耗时:{timeConsuming}ms
             </span>
           ) : null}
           <div className="connect-proxy">
@@ -519,8 +530,18 @@ function VPN(): JSX.Element {
                 </span>
               }
             >
-              <BulbOutlined style={{ marginLeft: '10px' }} />
+              <BulbOutlined
+                style={{
+                  marginLeft: '10px',
+                  position: 'absolute',
+                  height: '32px',
+                  lineHeight: '30px'
+                }}
+              />
             </Tooltip>
+          </div>
+          <div className="vpn-body-problem" onClick={(): void => setSelfHelp(true)}>
+            <QuestionCircleOutlined />
           </div>
           <div className="vpn-body-nav">
             <span className="vpn-body-nav-title">指路牌</span>
@@ -553,6 +574,21 @@ function VPN(): JSX.Element {
           open={networkDrawerStatus}
         >
           <Network isReload={true}></Network>
+        </Drawer>
+
+        <Drawer
+          // title={t('vpn.network.check')}
+          placement="right"
+          onClose={onCloseSelfHelpDrawer}
+          open={selfHelp}
+          width={800}
+        >
+          <webview
+            src="https://it-course.qunhequnhe.com:8180/docs/soft/xiaoku/xiaoku-vpn-problem/"
+            style={{ width: '100%', height: '86vh' }}
+            // eslint-disable-next-line react/no-unknown-property
+            useragent="Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko wxwork"
+          ></webview>
         </Drawer>
       </Spin>
     </div>

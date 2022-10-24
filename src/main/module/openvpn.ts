@@ -272,7 +272,7 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
       console.log(data)
       xiaokuOpenvpnConnectLog(data, vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value())
       // setConnectingLog
-      _event.sender.send('setConnectingLog', data)
+      // _event.sender.send('setConnectingLog', data)
       //   global.mainWindow.webContents.send('setConnectingLog', data)
       if (data.indexOf('Need hold release from management interface') !== -1) {
         // 发现Openvpn开始接入management了，那么启动数据转发
@@ -483,7 +483,7 @@ function connectOpenVPNSocket(
     }
     // 输出流量监听
     if (data && data.indexOf('>BYTECOUNT:') !== -1) {
-      xiaokuDebug(`接收到的DATA: ${data}`)
+      // xiaokuDebug(`接收到的DATA: ${data}`)
       data = String(data).replace('>BYTECOUNT:', '')
       networkIn = Number(data.split(',')[0]) - oldNetworkIn
       networkOut = Number(data.split(',')[1]) - oldNetworkOut
@@ -509,7 +509,10 @@ function connectOpenVPNSocket(
  * @param {*} bytes
  * @returns
  */
-function fomartNetwork(bytes: any): void {
+function fomartNetwork(bytes: any): string {
+  if (!bytes) {
+    return 0 + '/bytes'
+  }
   if (bytes >= 1073741824) {
     bytes = Math.round((bytes / 1073741824) * 100) / 100 + '/Gb'
   } else if (bytes >= 1048576) {

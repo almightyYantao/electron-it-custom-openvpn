@@ -1,7 +1,6 @@
 import { IncomingMessage, ipcMain, IpcMainEvent, net } from 'electron'
 import { aesDecrypt, aesEncrypt } from './decrypt'
 import { xiaokuError } from './log'
-import cmd from 'child_process'
 import { USER, VPN_ENUM } from './enumeration'
 import db from '../store/config'
 
@@ -43,7 +42,8 @@ ipcMain.on('isTokenValid', (_event: IpcMainEvent) => {
  */
 ipcMain.on('exitLogin', () => {
   db.set(USER.USER_TOKEN, '').write()
-  db.set(USER.USER_USERNAME, '').write()
+  //   db.set(USER.USER_USERNAME, '').write()
+  db.set(USER.EXIT_AUTO_LOGIN, false).write()
 })
 
 /**

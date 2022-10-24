@@ -1,5 +1,5 @@
 import { ipcMain, IpcMainEvent, shell } from 'electron'
-import db, { ConfigValue } from '../store/vpn'
+import db from '../store/vpn'
 
 /**
  * 获取VPN配置文件的一些参数
