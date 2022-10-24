@@ -27,7 +27,7 @@ ipcMain.on('checkLocalHostNetwork', (_event: IpcMainEvent, eventName: string) =>
       url = 'www.baidu.com'
       break
     case 'vpn':
-      url = 'cf.qunhequnhe.com'
+      url = 'it-vpn-clb.qunhequnhe.com'
       break
     default:
       break

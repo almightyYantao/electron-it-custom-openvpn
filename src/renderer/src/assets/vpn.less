@@ -19,7 +19,7 @@
     width: 100%;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    // justify-content: center;
     flex-wrap: wrap;
     flex-direction: column;
 }
@@ -28,6 +28,8 @@
     margin: 10px 0;
     overflow: hidden;
     height: 20px;
+    position: relative;
+    top: 60px;
 }
 
 .vpn-top-tool-config {
@@ -37,6 +39,8 @@
 .vpn-main-body .circle {
     width: 150px;
     height: 150px;
+    position: relative;
+    top: 50px;
     /* background-image: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%); */
     // background-image: linear-gradient(to top, #48c6ef 0%, #6f86d6 100%);
     border-radius: 50%;
@@ -49,17 +53,7 @@
 .vpn-main-body .circle-success {
     background-image: linear-gradient(0deg, #3cb371, #7fffaa);
     box-shadow: 0 0 16px 0 #92fe9d;
-    animation: vpnSuccessMove 1s forwards;
-}
-
-@keyframes vpnSuccessMove {
-    0% {
-        transform: translateY(0);
-    }
-
-    100% {
-        transform: translateY(-120px);
-    }
+    // animation: vpnSuccessMove 1s forwards;
 }
 
 .vpn-main-body .vpn-body-nav {
@@ -257,10 +251,20 @@
 
 .connecting-up-down {
     position: relative;
-    bottom: 140px;
+    top: 20px;
+    // bottom: 140px;
 }
 
 .connect-proxy {
-    position: relative;
-    bottom: 80px;
+    position: absolute;
+    // height: 200px;
+    text-align: center;
+    bottom: 300px;
+    width: calc(100vw - 100px - 20px);
+    border-radius: 10px;
+    // background-color: #fff;
+    // box-shadow: 2px 2px 10px #e3e3e3;
+    // animation: vpnBodyNav 1s forwards;
+    // display: inline-flex;
+    // flex-flow: column;
 }

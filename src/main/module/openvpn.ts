@@ -219,9 +219,9 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         : vpnDb.default.get(VPN_ENUM.VPN_PORT).value()
     let ssh = ''
     const configName = vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value()
-    const config = `"${db.get(BASE.APP_PATH).value() + '/assets/config/'}qunheVPN-${
+    const config = `${db.get(BASE.APP_PATH).value() + '/assets/config/'}qunheVPN-${
       configName === undefined ? 'slb' : configName
-    }.ovpn"`
+    }.ovpn`
     if (type === 'darwin') {
       ssh =
         `"/Library/Application Support/xiaoku-app/macos/openvpn-executable" ` +
@@ -237,6 +237,7 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         '/assets/windows/openvpn.exe'
       )}" --config "${config}" --management 127.0.0.1 ${port} --auth-retry interact --management-query-passwords --management-hold `
     }
+    xiaokuDebug(`ssh: ${ssh}`)
     shell = cmd.exec(`${ssh}`)
 
     // 监听是否过程中出现了不影响的错误信息，只记录
@@ -261,9 +262,8 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
       if (code !== 0 && code !== null) {
         _reject({ status: false, remark: error })
         return
-      } else {
-        _event.sender.send('complete_close')
       }
+      _event.sender.send('complete_close')
     })
 
     // 监听进程输出事件

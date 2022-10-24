@@ -70,27 +70,32 @@ ipcMain.on('downloadLog', () => {
  */
 function toZip(fileName: string): void {
   const zip = new JSZip()
-  zip.file('xiaoku-info.log', getFileContent('xiaoku-info.log'))
-  zip.file('xiaoku-debug.log', getFileContent('xiaoku-debug.log'))
-  zip.file('xiaoku-error.log', getFileContent('xiaoku-error.log'))
-  zip.file(
-    'xiaokuOpenvpnConnectLog-' + db.get(VPN_ENUM.CONFIG_VALUE).value() + '.log',
-    getFileContent('xiaokuOpenvpnConnectLog-' + db.get(VPN_ENUM.CONFIG_VALUE).value() + '.log')
-  )
-
-  // 填充配置文件
-  zip.file(
-    'base-config.json',
-    fs.readFileSync(path.join(app.getPath('userData'), '/base-config.json'), { encoding: 'utf-8' })
-  )
-  zip.file(
-    'vpn.json',
-    fs.readFileSync(path.join(app.getPath('userData'), '/vpn.json'), { encoding: 'utf-8' })
-  )
-  zip.file(
-    'soft.json',
-    fs.readFileSync(path.join(app.getPath('userData'), '/soft.json'), { encoding: 'utf-8' })
-  )
+  try {
+    zip.file('xiaoku-info.log', getFileContent('xiaoku-info.log'))
+    zip.file('xiaoku-debug.log', getFileContent('xiaoku-debug.log'))
+    zip.file('xiaoku-error.log', getFileContent('xiaoku-error.log'))
+    zip.file(
+      'xiaokuOpenvpnConnectLog-' + db.get(VPN_ENUM.CONFIG_VALUE).value() + '.log',
+      getFileContent('xiaokuOpenvpnConnectLog-' + db.get(VPN_ENUM.CONFIG_VALUE).value() + '.log')
+    )
+    // 填充配置文件
+    zip.file(
+      'base-config.json',
+      fs.readFileSync(path.join(app.getPath('userData'), '/base-config.json'), {
+        encoding: 'utf-8'
+      })
+    )
+    zip.file(
+      'vpn.json',
+      fs.readFileSync(path.join(app.getPath('userData'), '/vpn.json'), { encoding: 'utf-8' })
+    )
+    zip.file(
+      'soft.json',
+      fs.readFileSync(path.join(app.getPath('userData'), '/soft.json'), { encoding: 'utf-8' })
+    )
+  } catch (e) {
+    xiaokuError(`获取文件内容失败: ${e}`)
+  }
 
   // 压缩
   zip

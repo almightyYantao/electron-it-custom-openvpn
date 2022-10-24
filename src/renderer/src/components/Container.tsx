@@ -77,19 +77,25 @@ function Container(): JSX.Element {
     })
     window.electron.ipcRenderer.send('vpnDbGet', 'normallyClosed')
     window.electron.ipcRenderer.once('vpnDbGet-normallyClosed', (_event: Event, arg: boolean) => {
-      if (arg !== true) {
-        Modal.confirm({
-          content: '监测到前一次未正常关闭，是否重新初始化',
-          onOk: () => {
-            window.electron.ipcRenderer.send('releasePort')
-            window.electron.ipcRenderer.once('sudo_down_vpn_success', () => {
+      if (
+        localStorage.getItem(`firstOpen:${require('@electron/remote').app.getVersion()}`) !== null
+      ) {
+        if (arg !== true) {
+          Modal.confirm({
+            content: '监测到前一次未正常关闭，是否重新初始化',
+            onOk: () => {
+              window.electron.ipcRenderer.send('releasePort')
+              window.electron.ipcRenderer.once('sudo_down_vpn_success', () => {
+                // setInitLoading(false)
+              })
+            },
+            onCancel: () => {
               // setInitLoading(false)
-            })
-          },
-          onCancel: () => {
-            // setInitLoading(false)
-          }
-        })
+            }
+          })
+        }
+      } else {
+        localStorage.setItem(`firstOpen:${require('@electron/remote').app.getVersion()}`, 'true')
       }
     })
     window.electron.ipcRenderer.send('vpnDbSet', 'normallyClosed', false)

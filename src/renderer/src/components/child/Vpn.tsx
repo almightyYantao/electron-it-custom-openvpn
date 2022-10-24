@@ -102,7 +102,6 @@ function VPN(): JSX.Element {
         })
       }
     )
-    message.success(`所有配置文件更新完成`)
   }
 
   /**
@@ -120,91 +119,95 @@ function VPN(): JSX.Element {
         })
       }
     )
-    window.electron.ipcRenderer.send('isTokenValid')
-    window.electron.ipcRenderer.once('isTokenValid', (_event: Event, isTokenValid: boolean) => {
-      console.log(isTokenValid)
-      if (!isTokenValid) {
-        navigate('/login')
-      } else {
-        // 获取上一次连接的配置文件
-        window.electron.ipcRenderer.send('vpnDbGet', 'configValue')
-        window.electron.ipcRenderer.once('vpnDbGet-configValue', (_event: Event, arg: string) => {
-          getConfig(String(localStorage.getItem('username')), arg)
-        })
-        setTitle(t('vpn.connect.title'))
-        setNav([
-          {
-            name: 'confluence',
-            url: 'https://cf.qunhequnhe.com'
-          },
-          {
-            name: '核伙人门户',
-            url: 'https://coreland.qunhequnhe.com'
-          },
-          {
-            name: '任务中心',
-            url: 'https://coreland.qunhequnhe.com/task?id=initiate'
-          },
-          {
-            name: 'OKR',
-            url: 'https://okr-web.qunhequnhe.com'
-          },
-          {
-            name: 'Kaptain',
-            url: 'https://kaptain.qunhequnhe.com/'
-          },
-          {
-            name: 'nextCloud',
-            url: 'https://nextcloud.qunhequnhe.com/'
-          },
-          {
-            name: '数据小站',
-            url: 'https://tesseract.qunhequnhe.com/'
-          },
-          {
-            name: '运营云台',
-            url: 'https://yuntai.qunhequnhe.com/#/home'
-          },
-          {
-            name: 'KuBOSS',
-            url: 'https://salesplatform.kujiale.com/workbench/#/workbench/index'
-          }
-        ])
-        // 获取当前VPN状态
-        window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.status')
-        window.electron.ipcRenderer.once(
-          'vpnDbGet-connectStatus.status',
-          (_event: Event, arg: boolean) => {
-            // setSuccessStatus()
-            console.log(arg)
-            if (arg === true) {
-              setSuccessStatus()
-              window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.connectIp')
-              window.electron.ipcRenderer.once(
-                'vpnDbGet-connectStatus.connectIp',
-                (_event: Event, arg: string) => {
-                  console.log(arg)
-                  setRemoteNetwork(arg)
-                }
-              )
-              // 判断当前代理是否需要展示
-              if (sessionStorage.getItem('proxyActive') === 'true') {
-                setProxyActive(true)
-              }
-            }
-          }
-        )
-        window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
-        window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
-          console.log(arg)
-          setConnectProxyValue(arg)
-        })
-        window.electron.ipcRenderer.send('getLocalHostNetwork')
-        window.electron.ipcRenderer.once('setLocalHostNetwork', (_event: Event, arg: string) => {
-          setLocalNetwork(arg)
-        })
-      }
+    // window.electron.ipcRenderer.send('isTokenValid')
+    // window.electron.ipcRenderer.once('isTokenValid', (_event: Event, isTokenValid: boolean) => {
+    //   console.log(isTokenValid)
+    //   if (!isTokenValid) {
+    //     navigate('/login')
+    //   } else {
+    // 获取上一次连接的配置文件
+    window.electron.ipcRenderer.send('vpnDbGet', 'configValue')
+    window.electron.ipcRenderer.once('vpnDbGet-configValue', (_event: Event, arg: string) => {
+      getConfig(String(localStorage.getItem('username')), arg)
     })
+    setTitle(t('vpn.connect.title'))
+    setNav([
+      {
+        name: 'confluence',
+        url: 'https://cf.qunhequnhe.com'
+      },
+      {
+        name: '核伙人门户',
+        url: 'https://coreland.qunhequnhe.com'
+      },
+      {
+        name: '任务中心',
+        url: 'https://coreland.qunhequnhe.com/task?id=initiate'
+      },
+      {
+        name: 'OKR',
+        url: 'https://okr-web.qunhequnhe.com'
+      },
+      {
+        name: 'Kaptain',
+        url: 'https://kaptain.qunhequnhe.com/'
+      },
+      {
+        name: 'nextCloud',
+        url: 'https://nextcloud.qunhequnhe.com/'
+      },
+      {
+        name: '数据小站',
+        url: 'https://tesseract.qunhequnhe.com/'
+      },
+      {
+        name: '运营云台',
+        url: 'https://yuntai.qunhequnhe.com/#/home'
+      },
+      {
+        name: 'KuBOSS',
+        url: 'https://salesplatform.kujiale.com/workbench/#/workbench/index'
+      }
+    ])
+    // 获取当前VPN状态
+    window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.status')
+    window.electron.ipcRenderer.once(
+      'vpnDbGet-connectStatus.status',
+      (_event: Event, arg: boolean) => {
+        // setSuccessStatus()
+        console.log(arg)
+        if (arg === true) {
+          setSuccessStatus()
+          window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.connectIp')
+          window.electron.ipcRenderer.once(
+            'vpnDbGet-connectStatus.connectIp',
+            (_event: Event, arg: string) => {
+              console.log(arg)
+              setRemoteNetwork(arg)
+            }
+          )
+          // 判断当前代理是否需要展示
+          if (sessionStorage.getItem('proxyActive') === 'true') {
+            setProxyActive(true)
+          }
+          setConnectingUp(String(sessionStorage.getItem('network_traffic_out')))
+          setConnectingDown(String(sessionStorage.getItem('network_traffic_in')))
+        }
+      }
+    )
+    window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
+    window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
+      console.log(arg)
+      const m = !arg ? 'off' : arg
+      console.log(m, connectProxyValue)
+      setConnectProxyValue(m)
+    })
+    window.electron.ipcRenderer.send('getLocalHostNetwork')
+    window.electron.ipcRenderer.once('setLocalHostNetwork', (_event: Event, arg: string) => {
+      setLocalNetwork(arg)
+    })
+    // }
+    // })
   }, [])
 
   /**
@@ -322,15 +325,18 @@ function VPN(): JSX.Element {
     setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     setConnectingLog('')
     window.electron.ipcRenderer.on('network_traffic_out', (_event: Event, arg: string) => {
+      sessionStorage.setItem('network_traffic_out', arg)
       setConnectingUp(arg)
     })
     window.electron.ipcRenderer.on('network_traffic_in', (_event: Event, arg: string) => {
+      sessionStorage.setItem('network_traffic_in', arg)
       setConnectingDown(arg)
     })
     setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
     window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
-      setConnectProxyValue(!arg ? 'off' : arg)
+      console.log(arg, !arg)
+      setConnectProxyValue(() => (!arg ? 'off' : arg))
       proxyChange(arg)
     })
     if (configMap[useConfig] && configMap[useConfig]?.pac) {
@@ -425,11 +431,14 @@ function VPN(): JSX.Element {
             <Space>
               <RedoOutlined
                 style={{ cursor: 'pointer' }}
-                onClick={() => getConfig(String(localStorage.getItem('username')), useConfig)}
+                onClick={() => {
+                  getConfig(String(localStorage.getItem('username')), useConfig)
+                  message.success(`所有配置文件更新完成`)
+                }}
               />
               <Select
                 value={useConfig}
-                disabled={connectStatus}
+                disabled={connectStatus || connectingStatus}
                 onChange={configOnChange}
                 className="vpn-top-tool-config"
               >
@@ -466,74 +475,72 @@ function VPN(): JSX.Element {
               {connectingDown}
             </span>
           ) : null}
-          {proxyActive ? (
-            <div className="connect-proxy">
-              <Radio.Group
-                value={connectProxyValue}
-                buttonStyle="solid"
-                onChange={redioProxyChange}
-              >
-                <Radio.Button value="off">公司内网</Radio.Button>
-                <Radio.Button value="pac">极速模式</Radio.Button>
-                <Radio.Button value="all">全局模式</Radio.Button>
-              </Radio.Group>
-              <Tooltip
-                // color={'orange'}
-                style={{ width: '250px' }}
-                title={
-                  <span style={{ textAlign: 'left' }}>
-                    <span>
-                      <b>公司内网: </b>
-                    </span>
-                    仅接入公司内网
-                    <br />
-                    <span>
-                      <b>极速模式: </b>
-                    </span>
-                    可访问内网+常用海外站点 <br />
-                    <span>
-                      <b>全局模式: </b>
-                    </span>
-                    全部流量通过国际线路,延迟较大
-                    <br />
-                    <span style={{ color: '#ee7621' }}>
-                      <b>特别提醒: </b>
-                    </span>
-                    <br />
-                    <span style={{ width: '10px', display: 'inline-block' }}>1</span>
-                    、国际线路有日志审计，
-                    <span style={{ color: '#ee7621' }}>仅供工作使用！</span>
-                    <br />
-                    <span style={{ width: '10px', display: 'inline-block' }}>2</span>
-                    、如装有浏览器代理插件，需设置为【系统代理】
+          <div className="connect-proxy">
+            <Radio.Group
+              value={connectProxyValue}
+              defaultValue={connectProxyValue}
+              buttonStyle="solid"
+              onChange={redioProxyChange}
+              disabled={!proxyActive}
+            >
+              <Radio.Button value="off">公司内网</Radio.Button>
+              <Radio.Button value="pac">极速模式</Radio.Button>
+              <Radio.Button value="all">全局模式</Radio.Button>
+            </Radio.Group>
+            <Tooltip
+              // color={'orange'}
+              style={{ width: '250px' }}
+              title={
+                <span style={{ textAlign: 'left' }}>
+                  <span>
+                    <b>公司内网: </b>
                   </span>
-                }
-              >
-                <BulbOutlined style={{ marginLeft: '10px' }} />
-              </Tooltip>
+                  仅接入公司内网
+                  <br />
+                  <span>
+                    <b>极速模式: </b>
+                  </span>
+                  可访问内网+常用海外站点 <br />
+                  <span>
+                    <b>全局模式: </b>
+                  </span>
+                  全部流量通过国际线路,延迟较大
+                  <br />
+                  <span style={{ color: '#ee7621' }}>
+                    <b>特别提醒: </b>
+                  </span>
+                  <br />
+                  <span style={{ width: '10px', display: 'inline-block' }}>1</span>
+                  、国际线路有日志审计，
+                  <span style={{ color: '#ee7621' }}>仅供工作使用！</span>
+                  <br />
+                  <span style={{ width: '10px', display: 'inline-block' }}>2</span>
+                  、如装有浏览器代理插件，需设置为【系统代理】
+                </span>
+              }
+            >
+              <BulbOutlined style={{ marginLeft: '10px' }} />
+            </Tooltip>
+          </div>
+          <div className="vpn-body-nav">
+            <span className="vpn-body-nav-title">指路牌</span>
+            <div className="vpn-body-nav-info">
+              {nav?.map((item: NavList) => {
+                return (
+                  <a
+                    key={item.name}
+                    className="vpn-body-nav-item"
+                    onClick={() => {
+                      openUrl(item.url)
+                    }}
+                  >
+                    <div className="vpn-body-nav-item-icon">{item.name.substr(0, 1)}</div>
+                    {item.name}
+                  </a>
+                )
+              })}
             </div>
-          ) : null}
-          {connectStatus ? (
-            <div className="vpn-body-nav">
-              <span className="vpn-body-nav-title">指路牌</span>
-              <div className="vpn-body-nav-info">
-                {nav?.map((item: NavList) => {
-                  return (
-                    <a
-                      key={item.name}
-                      className="vpn-body-nav-item"
-                      onClick={() => {
-                        openUrl(item.url)
-                      }}
-                    >
-                      <div className="vpn-body-nav-item-icon">{item.name.substr(0, 1)}</div>
-                      {item.name}
-                    </a>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
+          </div>
         </div>
         <div className="vpn-footer">
           <span className="local">{localNetwork}</span>

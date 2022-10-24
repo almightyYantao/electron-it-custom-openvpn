@@ -136,7 +136,7 @@ function createWindow(): void {
 
 // 显示窗口，判断是否连接着VPN
 const showVpnConnectWindows = (): void => {
-  if (vpnDb.default.get(VPN_ENUM.CONNECT_STATUS_STATUS).value() === false) {
+  if (vpnDb.default.get(VPN_ENUM.CONNECT_STATUS_STATUS).value() !== true) {
     vpnDb.default.set(VPN_ENUM.NORMALLY_CLOSED, true).write()
     global.mainWindow = null
     app.exit()
