@@ -31,7 +31,6 @@ type NavList = {
   icon?: string
   url: string
 }
-
 function VPN(): JSX.Element {
   const [configs, setConfigs] = useState<Config[]>()
   const [useConfig, setUseConfig] = useState('qunhe-slb')
@@ -46,7 +45,8 @@ function VPN(): JSX.Element {
   const [localNetwork, setLocalNetwork] = useState('')
   const [networkDrawerStatus, setNetworkDrawerStatus] = useState(false)
   const [initLoading, setInitLoading] = useState(false)
-  const [timeConsuming, setTimeConsuming] = useState(0)
+  const [timeConsuming, setTimeConsuming] = useState(1)
+  const [timeShow, setTimeShow] = useState(false)
   const [connectingUp, setConnectingUp] = useState('')
   const [connectingDown, setConnectingDown] = useState('')
   const [connectProxyValue, setConnectProxyValue] = useState('off')
@@ -55,6 +55,7 @@ function VPN(): JSX.Element {
   const [proxyActive, setProxyActive] = useState(false)
   const [configMap, setConfigMap] = useState({})
 
+  let interval
   /**
    * 获取配置文件
    * @param ldap 花名LDAP
@@ -230,7 +231,28 @@ function VPN(): JSX.Element {
     if (connectStatus === true || connectingStatus === true) {
       closeVpn()
     } else {
+      setTimeShow(true)
+      intervalInit(true)
       connectVpn()
+    }
+  }
+
+  /**
+   * 定时器
+   */
+  const intervalInit = (type: boolean) => {
+    if (type) {
+      let time = 1
+      interval = setInterval(() => {
+        setTimeConsuming(() => {
+          time = time + 1
+          return time
+        })
+      }, 1000)
+      console.log('开始的定时器', interval)
+    } else {
+      console.log('结束的定时器', interval)
+      clearInterval(interval)
     }
   }
 
@@ -326,7 +348,11 @@ function VPN(): JSX.Element {
     window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
     window.electron.ipcRenderer.removeAllListeners('openvpn_event')
     setConnectingStatus(false)
-    setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
+    intervalInit(false)
+    setTimeout(() => {
+      setTimeShow(false)
+    }, 5000)
+    // setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     setConnectingLog('')
     window.electron.ipcRenderer.on('network_traffic_out', (_event: Event, arg: string) => {
       sessionStorage.setItem('network_traffic_out', arg)
@@ -336,7 +362,7 @@ function VPN(): JSX.Element {
       sessionStorage.setItem('network_traffic_in', arg)
       setConnectingDown(arg)
     })
-    setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
+    // setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
     window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
       console.log(arg, !arg)
@@ -370,7 +396,9 @@ function VPN(): JSX.Element {
     setTitle(t('vpn.connect.title'))
     setProxyActive(false)
     setConnectCLass('circle')
+    setTimeShow(false)
     setConnectingStatus(false)
+    intervalInit(false)
     window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
     window.electron.ipcRenderer.removeAllListeners('openvpn-start-status')
     window.electron.ipcRenderer.removeAllListeners('network_traffic_out')
@@ -460,6 +488,18 @@ function VPN(): JSX.Element {
             </Space>
           </div>
         </div>
+        {timeShow ? (
+          <span
+            style={{
+              color: timeShow ? '#000' : '#fff',
+              position: 'absolute',
+              top: '50px',
+              right: '10px'
+            }}
+          >
+            本次链接耗时:{timeConsuming}/s
+          </span>
+        ) : null}
         <div className="vpn-main-body">
           <div className={connectClass} onClick={startVpn}>
             <div className="circleTwo">
@@ -477,13 +517,6 @@ function VPN(): JSX.Element {
               {connectingUp}
               <CaretDownOutlined />
               {connectingDown}
-            </span>
-          ) : null}
-          {connectStatus ? (
-            <span
-              style={{ color: connectStatus ? '#000' : '#fff', position: 'relative', top: '30px' }}
-            >
-              本次链接耗时:{timeConsuming}ms
             </span>
           ) : null}
           <div className="connect-proxy">

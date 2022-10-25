@@ -1,4 +1,4 @@
-import { Segmented } from 'antd'
+import { Alert, Segmented } from 'antd'
 import { SegmentedLabeledOption } from 'antd/lib/segmented'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -34,7 +34,29 @@ function Tools(): JSX.Element {
         }}
         className="tools-header"
       />
-      <div className="tools-content ">
+      <div className="tools-content">
+        <div>
+          {process.platform === 'darwin' ? (
+            <Alert
+              message={
+                <span>
+                  Mac OS电脑请首次安装需要安装驱动文件👉
+                  <a
+                    onClick={(): void =>
+                      window.electron.ipcRenderer.send(
+                        'open-url',
+                        'https://nextcloud.qunhequnhe.com/s/kzaSFPW5EgjTb4N'
+                      )
+                    }
+                  >
+                    【点击下载】
+                  </a>
+                </span>
+              }
+              type="warning"
+            />
+          ) : null}
+        </div>
         <Printer />
       </div>
       {/* <webview

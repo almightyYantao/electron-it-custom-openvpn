@@ -117,7 +117,7 @@ ipcMain.on('initVpnConfig', (_event: IpcMainEvent) => {
 /**
  * 监听VPN断开按钮
  */
-ipcMain.on('openvpn-close', () => {
+ipcMain.on('openvpn-close', (_event: IpcMainEvent) => {
   // 先判断shell存不存在，不存在的话说明没运行过，但是他的状态又是true，那么直接至为false
   console.log('shell', shell, 'pid', shell?.pid)
   if (shell?.pid) {
@@ -131,6 +131,8 @@ ipcMain.on('openvpn-close', () => {
         }
       })
       .catch(() => {
+        // complete_close
+        _event.sender.send('complete_close')
         vpnDb.default.set(VPN_ENUM.CONNECT_STATUS_STATUS, false).write()
       })
   } else {
@@ -319,7 +321,7 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
  */
 function cleanDns(): void {
   if (process.platform === 'darwin') {
-    const shellCmd = `"/Library/Application Support/xiaoku-app/macos/proxy_conf_helper" -d ""`
+    const shellCmd = `"/Library/Application Support/xiaoku-app/macos/proxy_xiaoku_helper" -d ""`
     cmd.exec(shellCmd, (error, stdout, stderr) => {
       if (error || stderr) {
         xiaokuError(`error: ${error},stderr: ${stderr}`)
