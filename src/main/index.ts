@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, Menu, Tray, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, Menu, Tray, ipcMain, powerSaveBlocker } from 'electron'
 import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 require('@electron/remote/main').initialize()
@@ -56,6 +56,8 @@ function createWindow(): void {
   db.set(BASE.STATIC_PATH, path.join(__dirname, '/static').replace(/\\/g, '\\\\')).write()
 
   require('@electron/remote/main').enable(global.mainWindow.webContents)
+
+  powerSaveBlocker.start('prevent-app-suspension')
 
   // globalShortcut.register('F12', function () {
   //   global.mainWindow.webContents.openDevTools()

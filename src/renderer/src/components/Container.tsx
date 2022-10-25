@@ -85,6 +85,7 @@ function Container(): JSX.Element {
             content: '监测到前一次未正常关闭，是否重新初始化',
             onOk: () => {
               window.electron.ipcRenderer.send('releasePort')
+              window.electron.ipcRenderer.send('openvpn-close')
               window.electron.ipcRenderer.once('sudo_down_vpn_success', () => {
                 // setInitLoading(false)
               })
@@ -146,7 +147,10 @@ function Container(): JSX.Element {
       Modal.confirm({
         content: t('update.success'),
         onOk: () => {
-          ipc.send('isUpdateNow')
+          window.electron.ipcRenderer.send('openvpn-close')
+          setTimeout(() => {
+            ipc.send('isUpdateNow')
+          }, 800)
         },
         okText: t('update.restart'),
         cancelText: t('update.later')

@@ -11,6 +11,7 @@ import '@renderer/assets/printer.less'
 function Printer(): JSX.Element {
   const [list, setList] = useState<PrinterListResult[]>()
   const [types, setTypes] = useState<PrinterResult[]>([])
+  const [spinningLoading, setSpinningLoading] = useState(false)
 
   useEffect(() => {
     getPrinterType().then((result: PrinterResult[]) => {
@@ -37,6 +38,7 @@ function Printer(): JSX.Element {
    */
   const startInstall = (item: PrinterListResult): void => {
     console.log('开始安装')
+    setSpinningLoading(true)
     window.electron.ipcRenderer.send('printer-install', item.execSilent)
     window.electron.ipcRenderer.on('printer-download-info', (_event: Event, info: string) => {
       message.info(info)
@@ -44,16 +46,18 @@ function Printer(): JSX.Element {
     window.electron.ipcRenderer.once('printer-error', (_event: Event, reason: string) => {
       message.error(reason)
       window.electron.ipcRenderer.removeAllListeners('printer-download-info')
+      setSpinningLoading(false)
     })
     window.electron.ipcRenderer.once('printer-success', (_event: Event, reason: string) => {
       message.success('安装成功')
       window.electron.ipcRenderer.removeAllListeners('printer-download-info')
+      setSpinningLoading(false)
     })
   }
 
   return (
     <div className="printer-card">
-      <Spin spinning={false} className="printer-card">
+      <Spin spinning={spinningLoading} className="printer-card">
         <Tabs
           defaultActiveKey={String(1)}
           type="card"
