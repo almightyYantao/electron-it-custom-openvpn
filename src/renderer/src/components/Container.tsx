@@ -86,6 +86,7 @@ function Container(): JSX.Element {
             onOk: () => {
               window.electron.ipcRenderer.send('releasePort')
               window.electron.ipcRenderer.send('openvpn-close')
+              window.electron.ipcRenderer.send('relaunch')
               window.electron.ipcRenderer.once('sudo_down_vpn_success', () => {
                 // setInitLoading(false)
               })
