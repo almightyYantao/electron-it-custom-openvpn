@@ -326,6 +326,7 @@ function VPN(): JSX.Element {
           title: 'VPN Connect Error',
           content: remark
         })
+        initVpnText()
         closeVpn()
       }
     })
