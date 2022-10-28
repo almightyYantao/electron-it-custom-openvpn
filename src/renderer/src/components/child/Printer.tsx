@@ -7,6 +7,12 @@ import {
 import { Button, Card, Divider, message, Select, Spin, Tabs } from 'antd'
 import { useEffect, useState } from 'react'
 import '@renderer/assets/printer.less'
+import {
+  EVENT_PRINTER_DOWNLOAD_INFO,
+  EVENT_PRINTER_INSTALL,
+  EVENT_PRINTER_INSTALL_ERROR,
+  EVENT_PRINTER_INSTALL_SUCCESS
+} from '../../../../event'
 
 function Printer(): JSX.Element {
   const [list, setList] = useState<PrinterListResult[]>()
@@ -39,20 +45,26 @@ function Printer(): JSX.Element {
   const startInstall = (item: PrinterListResult): void => {
     console.log('开始安装')
     setSpinningLoading(true)
-    window.electron.ipcRenderer.send('printer-install', item.execSilent)
-    window.electron.ipcRenderer.on('printer-download-info', (_event: Event, info: string) => {
+    window.electron.ipcRenderer.send(EVENT_PRINTER_INSTALL, item.execSilent)
+    window.electron.ipcRenderer.on(EVENT_PRINTER_DOWNLOAD_INFO, (_event: Event, info: string) => {
       message.info(info)
     })
-    window.electron.ipcRenderer.once('printer-error', (_event: Event, reason: string) => {
-      message.error(reason)
-      window.electron.ipcRenderer.removeAllListeners('printer-download-info')
-      setSpinningLoading(false)
-    })
-    window.electron.ipcRenderer.once('printer-success', (_event: Event, reason: string) => {
-      message.success('安装成功')
-      window.electron.ipcRenderer.removeAllListeners('printer-download-info')
-      setSpinningLoading(false)
-    })
+    window.electron.ipcRenderer.once(
+      EVENT_PRINTER_INSTALL_ERROR,
+      (_event: Event, reason: string) => {
+        message.error(reason)
+        window.electron.ipcRenderer.removeAllListeners(EVENT_PRINTER_DOWNLOAD_INFO)
+        setSpinningLoading(false)
+      }
+    )
+    window.electron.ipcRenderer.once(
+      EVENT_PRINTER_INSTALL_SUCCESS,
+      (_event: Event, reason: string) => {
+        message.success('安装成功')
+        window.electron.ipcRenderer.removeAllListeners(EVENT_PRINTER_DOWNLOAD_INFO)
+        setSpinningLoading(false)
+      }
+    )
   }
 
   return (

@@ -7,6 +7,7 @@ const log = require('electron-log')
 import cmd from 'child_process'
 import db from '../store/vpn'
 import { VPN_ENUM } from './enumeration'
+import { EVENT_USER_DOWNLOAD_LOG } from '../../event'
 
 log.transports.console.level = true
 // 值得注意的是：输出到文件的时候，log.log的日志输出默认级别是warn。也就是说，最常被使用的info()是不会被输出的，这是个小坑。所以，可以使用下面的代码，修改输出到文件的时候，默认的输出日志级别。
@@ -49,7 +50,7 @@ export default function xiaokuLog(level: string, text: any): void {
   }
 }
 
-ipcMain.on('downloadLog', () => {
+ipcMain.on(EVENT_USER_DOWNLOAD_LOG, () => {
   log.transports.file.fileName = 'xiaoku-info.log'
   log.info('点击下载日志，下面记录基础信息')
   log.info('当前版本号: ', app.getVersion())

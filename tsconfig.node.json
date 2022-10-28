@@ -6,7 +6,8 @@
     "src/main/common/*",
     "src/main/module/*",
     "src/main/store/*",
-    "src/preload/*"
+    "src/preload/*",
+    "src/event.ts"
   ],
   "compilerOptions": {
     "composite": true

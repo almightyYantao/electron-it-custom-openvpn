@@ -6,7 +6,17 @@ import { useEffect, useState } from 'react'
 
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-
+import {
+  EVENT_APP_UPDATE_AUTO_UPDATE,
+  EVENT_APP_UPDATE_CHECK_FOR_UPDATE,
+  EVENT_APP_UPDATE_IS_UPDATE_NOW,
+  EVENT_SETTING_RELAUNCH,
+  EVENT_VPN_DB_GET,
+  EVENT_VPN_DB_SET,
+  EVENT_VPN_OPENVPN_CLOSE,
+  EVENT_VPN_RELEASE_PORT,
+  EVENT_VPN_SUDO_DOWN_OPENVPN
+} from '../../../event'
 import initTopDrag from '@renderer/common/topMove'
 
 const IconFont = createFromIconfontCN({
@@ -30,9 +40,9 @@ function Container(): JSX.Element {
 
   const onInputRadio = (value: number) => {
     // 先判断下现在是不是在连接VPN的状态，如果是的话，那么就禁止切换
-    window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.connecting')
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'connectStatus.connecting')
     window.electron.ipcRenderer.once(
-      'vpnDbGet-connectStatus.connecting',
+      EVENT_VPN_DB_GET + '-connectStatus.connecting',
       (_event: Event, arg: boolean) => {
         console.log(arg)
         if (arg === true) {
@@ -68,39 +78,42 @@ function Container(): JSX.Element {
     }
     setAvatar(String(localStorage.getItem('avatar')))
     setLdap(String(localStorage.getItem('name')))
-    window.electron.ipcRenderer.send('checkForUpdate')
-    window.electron.ipcRenderer.on('autoUpdate', (_event: Event, arg) => {
+    window.electron.ipcRenderer.send(EVENT_APP_UPDATE_CHECK_FOR_UPDATE)
+    window.electron.ipcRenderer.on(EVENT_APP_UPDATE_AUTO_UPDATE, (_event: Event, arg) => {
       console.log(arg)
       if (arg === '检测到新版本') {
         setBadgeUpdate(1)
       }
     })
-    window.electron.ipcRenderer.send('vpnDbGet', 'normallyClosed')
-    window.electron.ipcRenderer.once('vpnDbGet-normallyClosed', (_event: Event, arg: boolean) => {
-      if (
-        localStorage.getItem(`firstOpen:${require('@electron/remote').app.getVersion()}`) !== null
-      ) {
-        if (arg !== true) {
-          Modal.confirm({
-            content: '监测到前一次未正常关闭，是否重新初始化',
-            onOk: () => {
-              window.electron.ipcRenderer.send('releasePort')
-              window.electron.ipcRenderer.send('openvpn-close')
-              window.electron.ipcRenderer.send('relaunch')
-              window.electron.ipcRenderer.once('sudo_down_vpn_success', () => {
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'normallyClosed')
+    window.electron.ipcRenderer.once(
+      EVENT_VPN_DB_GET + '-normallyClosed',
+      (_event: Event, arg: boolean) => {
+        if (
+          localStorage.getItem(`firstOpen:${require('@electron/remote').app.getVersion()}`) !== null
+        ) {
+          if (arg !== true) {
+            Modal.confirm({
+              content: '监测到前一次未正常关闭，是否重新初始化',
+              onOk: () => {
+                window.electron.ipcRenderer.send(EVENT_VPN_RELEASE_PORT)
+                window.electron.ipcRenderer.send(EVENT_VPN_OPENVPN_CLOSE)
+                window.electron.ipcRenderer.send(EVENT_SETTING_RELAUNCH)
+                window.electron.ipcRenderer.once(EVENT_VPN_SUDO_DOWN_OPENVPN, () => {
+                  // setInitLoading(false)
+                })
+              },
+              onCancel: () => {
                 // setInitLoading(false)
-              })
-            },
-            onCancel: () => {
-              // setInitLoading(false)
-            }
-          })
+              }
+            })
+          }
+        } else {
+          localStorage.setItem(`firstOpen:${require('@electron/remote').app.getVersion()}`, 'true')
         }
-      } else {
-        localStorage.setItem(`firstOpen:${require('@electron/remote').app.getVersion()}`, 'true')
       }
-    })
-    window.electron.ipcRenderer.send('vpnDbSet', 'normallyClosed', false)
+    )
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_SET, 'normallyClosed', false)
   }, [])
 
   const showModal = () => {
@@ -127,11 +140,11 @@ function Container(): JSX.Element {
     if (badgeUpdate === 1) {
       ipc.send('confirm_update')
     } else {
-      ipc.send('checkForUpdate')
-      ipc.once('autoUpdate', (_event, arg) => {
+      ipc.send(EVENT_APP_UPDATE_CHECK_FOR_UPDATE)
+      ipc.once(EVENT_APP_UPDATE_AUTO_UPDATE, (_event, arg) => {
         console.log(arg)
         if (arg === '检测到新版本') {
-          ipc.send('checkForUpdate')
+          ipc.send(EVENT_APP_UPDATE_CHECK_FOR_UPDATE)
         } else {
           message.info(t('update.noNewVersionTxt'))
         }
@@ -144,13 +157,13 @@ function Container(): JSX.Element {
     })
 
     // 监听是否已经下载完成
-    ipc.once('isUpdateNow', () => {
+    ipc.once(EVENT_APP_UPDATE_IS_UPDATE_NOW, () => {
       Modal.confirm({
         content: t('update.success'),
         onOk: () => {
-          window.electron.ipcRenderer.send('openvpn-close')
+          window.electron.ipcRenderer.send(EVENT_VPN_OPENVPN_CLOSE)
           setTimeout(() => {
-            ipc.send('isUpdateNow')
+            ipc.send(EVENT_APP_UPDATE_IS_UPDATE_NOW)
           }, 800)
         },
         okText: t('update.restart'),

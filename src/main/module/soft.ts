@@ -1,15 +1,21 @@
 import { exec } from 'child_process'
 import { ipcMain, IpcMainEvent } from 'electron'
+import {
+  EVENT_SOFT_DOWNLOAD_PERCENT,
+  EVENT_SOFT_DOWNLOAD_SUCCESS,
+  EVENT_SOFT_INSTALL_APP_STATUS,
+  EVENT_SOFT_START_INSTALL
+} from '../../event'
 import { INSTALL_APP } from '../common/enumeration'
 import { xiaokuError, xiaokuInfo } from '../common/log'
 import db from '../store/soft'
 const fs = require('fs')
 const { download } = require('electron-dl')
 
-ipcMain.on('installAppStatus', (_event: IpcMainEvent) => {
+ipcMain.on(EVENT_SOFT_INSTALL_APP_STATUS, (_event: IpcMainEvent) => {
   const success = db.get(INSTALL_APP.SUCCESS).value()
   _event.sender.send(
-    'installAppStatus',
+    EVENT_SOFT_INSTALL_APP_STATUS,
     success == null ? true : success,
     db.get(INSTALL_APP.PERCENT).value(),
     db.get(INSTALL_APP.ITEM).write()
@@ -20,7 +26,7 @@ ipcMain.on('installAppStatus', (_event: IpcMainEvent) => {
  * 监听渲染层过来的安装软件
  */
 ipcMain.on(
-  'startInstallApp',
+  EVENT_SOFT_START_INSTALL,
   (_event: IpcMainEvent, id: number, path: string, silent: string, item: any) => {
     db.set(INSTALL_APP.SUCCESS, false).write()
     db.set(INSTALL_APP.ITEM, item).write()
@@ -28,7 +34,10 @@ ipcMain.on(
     download(global.mainWindow, path, {
       onProgress: (progress: any) => {
         db.set(INSTALL_APP.PERCENT, (progress.percent * 100).toFixed(2)).write()
-        _event.sender.send('download-percent-' + id, (progress.percent * 100).toFixed(2))
+        _event.sender.send(
+          EVENT_SOFT_DOWNLOAD_PERCENT + '-' + id,
+          (progress.percent * 100).toFixed(2)
+        )
       },
       onCompleted: (compile: any) => {
         db.set(INSTALL_APP.SUCCESS, true).write()
@@ -36,7 +45,7 @@ ipcMain.on(
         if (process.platform != 'darwin') {
           autoInstall(_event, id, compile.path, silent)
         } else {
-          _event.sender.send('download-success-' + id, 'success')
+          _event.sender.send(EVENT_SOFT_DOWNLOAD_SUCCESS + id, 'success')
         }
       },
       onerror: () => {
@@ -60,9 +69,9 @@ function autoInstall(_event: IpcMainEvent, id: number, path: string, silent: str
   }
   exec(cmd, (err: any, data: any, stderr: any) => {
     if (err) {
-      _event.sender.send('download-success-' + id, '执行CMD命令失败:' + cmd)
+      _event.sender.send(EVENT_SOFT_DOWNLOAD_SUCCESS + id, '执行CMD命令失败:' + cmd)
     } else {
-      _event.sender.send('download-success-' + id, 'success')
+      _event.sender.send(EVENT_SOFT_DOWNLOAD_SUCCESS + id, 'success')
     }
     fs.unlink(path, function (err: any) {
       if (err) {

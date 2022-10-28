@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, Menu, Tray, ipcMain, powerSaveBlocker } from
 import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 require('@electron/remote/main').initialize()
-import './common/event'
+import './common/commonEvent'
 import './module/openvpn'
 import './module/network'
 import './module/soft'
@@ -13,6 +13,13 @@ import './common/login'
 import db from './store/config'
 import * as vpnDb from './store/vpn'
 import { BASE, VPN_ENUM } from './common/enumeration'
+import {
+  EVENT_APP_UPDATE_AUTO_UPDATE,
+  EVENT_APP_UPDATE_CHECK_FOR_UPDATE,
+  EVENT_APP_UPDATE_CONFIRM_UPDATE,
+  EVENT_APP_UPDATE_IS_UPDATE_NOW,
+  EVENT_APP_WINDOWS_ALTER
+} from '../event'
 import { xiaokuError } from './common/log'
 
 global.mainWindow = null
@@ -152,7 +159,7 @@ const showVpnConnectWindows = (): void => {
     global.mainWindow.setSkipTaskbar(true)
     global.mainWindow.focus()
     global.mainWindow.webContents.send(
-      'alter_windows_openvpn_connect',
+      EVENT_APP_WINDOWS_ALTER,
       '当前VPN处于连接状态,请断开后退出',
       'VPN连接提醒'
     )
@@ -231,7 +238,7 @@ function updateHandle(): void {
   })
   autoUpdater.on('update-available', function () {
     sendUpdateMessage(message.updateAva)
-    ipcMain.on('confirm_update', () => {
+    ipcMain.on(EVENT_APP_UPDATE_CONFIRM_UPDATE, () => {
       autoUpdater.downloadUpdate()
     })
   })
@@ -245,8 +252,8 @@ function updateHandle(): void {
   })
   // 下载更新文件完成
   autoUpdater.on('update-downloaded', function () {
-    global.mainWindow.webContents.send('isUpdateNow')
-    ipcMain.on('isUpdateNow', () => {
+    global.mainWindow.webContents.send(EVENT_APP_UPDATE_IS_UPDATE_NOW)
+    ipcMain.on(EVENT_APP_UPDATE_IS_UPDATE_NOW, () => {
       //some code here to handle event
       // mainWindow.webContents.send('setNormalClose');
       try {
@@ -260,7 +267,7 @@ function updateHandle(): void {
   /**
    * 接收更新事件
    */
-  ipcMain.on('checkForUpdate', () => {
+  ipcMain.on(EVENT_APP_UPDATE_CHECK_FOR_UPDATE, () => {
     console.log('=====')
     //执行自动更新检查
     autoUpdater.checkForUpdates()
@@ -272,5 +279,5 @@ function updateHandle(): void {
  * @param {*} text
  */
 function sendUpdateMessage(text): void {
-  global.mainWindow.webContents.send('autoUpdate', text)
+  global.mainWindow.webContents.send(EVENT_APP_UPDATE_AUTO_UPDATE, text)
 }

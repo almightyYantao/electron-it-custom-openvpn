@@ -2,6 +2,12 @@ import { getSoftList, SoftResult } from '@renderer/api/softConfig'
 import { Tabs, Card, Avatar, Button, Spin, Divider, Modal } from 'antd'
 import { useEffect, useState } from 'react'
 import '@renderer/assets/soft.less'
+import {
+  EVENT_SOFT_DOWNLOAD_PERCENT,
+  EVENT_SOFT_DOWNLOAD_SUCCESS,
+  EVENT_SOFT_INSTALL_APP_STATUS,
+  EVENT_SOFT_START_INSTALL
+} from '../../../../event'
 function Soft(): JSX.Element {
   const [softList, setSoftList] = useState<SoftResult[]>()
   // const [loadings, setLoadings] = useState<{ [key: string]: boolean }>({})
@@ -18,10 +24,10 @@ function Soft(): JSX.Element {
    */
   useEffect(() => {
     getSoftListClass(2)
-    if (sessionStorage.getItem('installAppStatus') === 'true') {
+    if (sessionStorage.getItem(EVENT_SOFT_INSTALL_APP_STATUS) === 'true') {
       setLoading(true)
       window.electron.ipcRenderer.on(
-        'download-percent-' + sessionStorage.getItem('item-id'),
+        EVENT_SOFT_DOWNLOAD_PERCENT + '-' + sessionStorage.getItem('item-id'),
         (_event: Event, percent: number) => {
           setPercent(percent)
           // setLoadingTips({
@@ -59,18 +65,18 @@ function Soft(): JSX.Element {
    */
   const startInstall = (item: SoftResult): void => {
     // setLoadings({ ...loadings, [`soft-${item.id}`]: true })
-    sessionStorage.setItem('installAppStatus', 'true')
+    sessionStorage.setItem(EVENT_SOFT_INSTALL_APP_STATUS, 'true')
     sessionStorage.setItem('item-id', String(item.id))
     setLoading(true)
     window.electron.ipcRenderer.send(
-      'startInstallApp',
+      EVENT_SOFT_START_INSTALL,
       item.id,
       item.downUrl,
       item.execSilent,
       item
     )
     window.electron.ipcRenderer.on(
-      'download-percent-' + item.id,
+      EVENT_SOFT_DOWNLOAD_PERCENT + '-' + item.id,
       (_event: Event, percent: number) => {
         setPercent(percent)
         // setLoadingTips({
@@ -80,7 +86,7 @@ function Soft(): JSX.Element {
       }
     )
     window.electron.ipcRenderer.once(
-      'download-success-' + item.id,
+      EVENT_SOFT_DOWNLOAD_SUCCESS + item.id,
       (_event: Event, result: string) => {
         if (result !== 'success') {
           Modal.error({
@@ -90,8 +96,8 @@ function Soft(): JSX.Element {
         }
         // setLoadings((pref) => ({ ...pref, [`soft-${item.id}`]: false }))
         setLoading(false)
-        sessionStorage.setItem('installAppStatus', 'false')
-        window.electron.ipcRenderer.removeAllListeners('download-percent-' + item.id)
+        sessionStorage.setItem(EVENT_SOFT_INSTALL_APP_STATUS, 'false')
+        window.electron.ipcRenderer.removeAllListeners(EVENT_SOFT_DOWNLOAD_PERCENT + '-' + item.id)
       }
     )
   }

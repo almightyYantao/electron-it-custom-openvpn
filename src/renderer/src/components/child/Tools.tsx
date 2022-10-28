@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Printer from './Printer'
 import '@renderer/assets/tools.less'
+import { EVENT_APP_OPEN_URL } from '../../../../event'
 
 function Tools(): JSX.Element {
   const [options, setOptions] = useState<SegmentedLabeledOption[]>([])
@@ -44,7 +45,7 @@ function Tools(): JSX.Element {
                   <a
                     onClick={(): void =>
                       window.electron.ipcRenderer.send(
-                        'open-url',
+                        EVENT_APP_OPEN_URL,
                         'https://nextcloud.qunhequnhe.com/s/kzaSFPW5EgjTb4N'
                       )
                     }

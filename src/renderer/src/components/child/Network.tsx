@@ -3,6 +3,7 @@ import { Button, Space, Alert, Spin } from 'antd'
 import { useEffect, useState } from 'react'
 import '@renderer/assets/vpn.less'
 import { useTranslation } from 'react-i18next'
+import { EVENT_NETWORK_CHECK_LOCAL_HOST_NETWORK } from '../../../../event'
 
 const Network: React.FC<any> = (prop: any) => {
   const [networkEvent] = useState(['network', 'intranet', 'dns', 'vpn'])
@@ -25,9 +26,9 @@ const Network: React.FC<any> = (prop: any) => {
       const newLoadingResult = Object.create(netAllEventLoading)
       setNetAllEventLoading(newLoadingResult)
       console.log(netAllEvent)
-      window.electron.ipcRenderer.send('checkLocalHostNetwork', eventName)
+      window.electron.ipcRenderer.send(EVENT_NETWORK_CHECK_LOCAL_HOST_NETWORK, eventName)
       window.electron.ipcRenderer.once(
-        'checkLocalHostNetwork-' + eventName,
+        EVENT_NETWORK_CHECK_LOCAL_HOST_NETWORK + '-' + eventName,
         (event: Event, arg: boolean) => {
           netAllEvent[eventName] = arg
           setNetAllEvent(netAllEvent)

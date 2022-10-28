@@ -4,6 +4,20 @@ import { Button, Checkbox, Divider, Input, message, Radio, RadioChangeEvent } fr
 import { CheckboxChangeEvent } from 'antd/lib/checkbox'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  EVENT_SETTING_GET_VPN_PORT,
+  EVENT_SETTING_OPEN_DEV,
+  EVENT_SETTING_RELAUNCH,
+  EVENT_SETTING_SET_OPENAT_LOGIN,
+  EVENT_SETTING_SET_VPN_PORT,
+  EVENT_USER_EXIT_LOGIN,
+  EVENT_VPN_DB_SET,
+  EVENT_VPN_INIT_ERROR,
+  EVENT_VPN_INIT_SUCCESS,
+  EVENT_VPN_INIT_VPN_CONFIG,
+  EVENT_VPN_RELEASE_PORT,
+  EVENT_VPN_SUDO_DOWN_OPENVPN
+} from '../../../../event'
 
 function Setting(): JSX.Element {
   const [lanagueValue, setLanagueValue] = useState('zh')
@@ -23,8 +37,8 @@ function Setting(): JSX.Element {
         ? 'zh'
         : 'en'
     )
-    window.electron.ipcRenderer.send('get-vpn-port')
-    window.electron.ipcRenderer.once('get-vpn-port', (_event: Event, port: number) => {
+    window.electron.ipcRenderer.send(EVENT_SETTING_GET_VPN_PORT)
+    window.electron.ipcRenderer.once(EVENT_SETTING_GET_VPN_PORT, (_event: Event, port: number) => {
       if (port == null) {
         setVpnPort(7001)
       } else {
@@ -39,7 +53,7 @@ function Setting(): JSX.Element {
    */
   const autoBootChange = (e: CheckboxChangeEvent): void => {
     console.log(`checked = ${e.target.checked}`)
-    window.electron.ipcRenderer.send('setOpenAtLogin', e.target.checked)
+    window.electron.ipcRenderer.send(EVENT_SETTING_SET_OPENAT_LOGIN, e.target.checked)
   }
 
   /**
@@ -50,15 +64,15 @@ function Setting(): JSX.Element {
     console.log('radio checked', e.target.value)
     localStorage.setItem('localLanguage', e.target.value)
     setLanagueValue(e.target.value)
-    window.electron.ipcRenderer.send('relaunch')
+    window.electron.ipcRenderer.send(EVENT_SETTING_RELAUNCH)
   }
 
   /**
    * 退出登录
    */
   const exitLogin = (): void => {
-    window.electron.ipcRenderer.send('exitLogin')
-    window.electron.ipcRenderer.send('vpnDbSet', 'normallyClosed', true)
+    window.electron.ipcRenderer.send(EVENT_USER_EXIT_LOGIN)
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_SET, 'normallyClosed', true)
     navigate('/')
   }
 
@@ -79,7 +93,7 @@ function Setting(): JSX.Element {
     if (vpnPort < 6000 || vpnPort > 10001) {
       message.error(t('base.vpnSetting.portScope'))
     } else {
-      window.electron.ipcRenderer.send('set-vpn-port', vpnPort)
+      window.electron.ipcRenderer.send(EVENT_SETTING_SET_VPN_PORT, vpnPort)
     }
   }
 
@@ -88,8 +102,8 @@ function Setting(): JSX.Element {
    */
   const releasePort = (): void => {
     setReleasePortLoading(true)
-    window.electron.ipcRenderer.send('releasePort')
-    window.electron.ipcRenderer.once('sudo_down_vpn_success', () => {
+    window.electron.ipcRenderer.send(EVENT_VPN_RELEASE_PORT)
+    window.electron.ipcRenderer.once(EVENT_VPN_SUDO_DOWN_OPENVPN, () => {
       setReleasePortLoading(false)
     })
   }
@@ -99,12 +113,12 @@ function Setting(): JSX.Element {
    */
   const initVpnConfig = (): void => {
     setInitVpnConfigLoading(true)
-    window.electron.ipcRenderer.send('initVpnConfig')
-    window.electron.ipcRenderer.once('init-success', () => {
+    window.electron.ipcRenderer.send(EVENT_VPN_INIT_VPN_CONFIG)
+    window.electron.ipcRenderer.once(EVENT_VPN_INIT_SUCCESS, () => {
       message.success(t('base.systemTools.initVpnConfigSuccess'))
       setInitVpnConfigLoading(false)
     })
-    window.electron.ipcRenderer.once('init-error', () => {
+    window.electron.ipcRenderer.once(EVENT_VPN_INIT_ERROR, () => {
       message.error(t('base.systemTools.initVpnConfigError'))
       setInitVpnConfigLoading(false)
     })
@@ -144,7 +158,7 @@ function Setting(): JSX.Element {
       <div className="setting-list">
         <Divider orientation="left">{t('base.systemTools.title')}</Divider>
         <Button
-          onClick={(): void => window.electron.ipcRenderer.send('openDev')}
+          onClick={(): void => window.electron.ipcRenderer.send(EVENT_SETTING_OPEN_DEV)}
           type="primary"
           style={{ marginLeft: '10px' }}
         >

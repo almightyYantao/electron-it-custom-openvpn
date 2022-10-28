@@ -23,6 +23,29 @@ import {
   QuestionCircleOutlined,
   RedoOutlined
 } from '@ant-design/icons'
+import {
+  EVENT_APP_OPEN_URL,
+  EVENT_APP_WINDOWS_ALTER,
+  EVENT_NETWORK_GET_LOCAL_HOST_NETWORK,
+  EVENT_NETWORK_SET_LOCAL_HOST_NETWORK,
+  EVENT_USER_DOWNLOAD_LOG,
+  EVENT_VPN_CHANGE_PROXY,
+  EVENT_VPN_DB_GET,
+  EVENT_VPN_DB_SET,
+  EVENT_VPN_DONT_INIT,
+  EVENT_VPN_INIT_CONFIG_LIST,
+  EVENT_VPN_INIT_ERROR,
+  EVENT_VPN_INIT_START,
+  EVENT_VPN_INIT_SUCCESS,
+  EVENT_VPN_NETWORK_TRAFFIC_IN,
+  EVENT_VPN_NETWORK_TRAFFIC_OUT,
+  EVENT_VPN_OPENVPN_CLOSE,
+  EVENT_VPN_OPENVPN_COMPLETE_CLOSE,
+  EVENT_VPN_OPENVPN_EVENT,
+  EVENT_VPN_OPENVPN_START,
+  EVENT_VPN_OPENVPN_START_STATUS,
+  EVENT_VPN_SET_CONNECTING_LOG
+} from '../../../../event'
 
 const { Option } = Select
 
@@ -91,16 +114,16 @@ function VPN(): JSX.Element {
     } else {
       sessionStorage.setItem('proxyActive', String(false))
     }
-    window.electron.ipcRenderer.send('vpnDbSet', 'configValue', value)
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_SET, 'configValue', value)
   }
 
   /**
    * 初始化配置文件
    */
   const initConfig = (configs: Config[]) => {
-    window.electron.ipcRenderer.send('initConfigList', configs)
+    window.electron.ipcRenderer.send(EVENT_VPN_INIT_CONFIG_LIST, configs)
     window.electron.ipcRenderer.once(
-      'initConfigList',
+      EVENT_VPN_INIT_CONFIG_LIST,
       (_event: Event, arg: Map<string, boolean>) => {
         arg.forEach((_value, key) => {
           message.success(`更新完成「${key}」配置文件`)
@@ -113,10 +136,10 @@ function VPN(): JSX.Element {
    * 初始化组件
    */
   useEffect(() => {
-    window.electron.ipcRenderer.removeAllListeners('alter_windows_openvpn_connect')
-    window.electron.ipcRenderer.removeAllListeners('initConfigList')
+    window.electron.ipcRenderer.removeAllListeners(EVENT_APP_WINDOWS_ALTER)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_INIT_CONFIG_LIST)
     window.electron.ipcRenderer.on(
-      'alter_windows_openvpn_connect',
+      EVENT_APP_WINDOWS_ALTER,
       (_event: Event, content: string, title: string) => {
         Modal.error({
           title: title,
@@ -124,17 +147,14 @@ function VPN(): JSX.Element {
         })
       }
     )
-    // window.electron.ipcRenderer.send('isTokenValid')
-    // window.electron.ipcRenderer.once('isTokenValid', (_event: Event, isTokenValid: boolean) => {
-    //   console.log(isTokenValid)
-    //   if (!isTokenValid) {
-    //     navigate('/login')
-    //   } else {
     // 获取上一次连接的配置文件
-    window.electron.ipcRenderer.send('vpnDbGet', 'configValue')
-    window.electron.ipcRenderer.once('vpnDbGet-configValue', (_event: Event, arg: string) => {
-      getConfig(String(localStorage.getItem('username')), arg)
-    })
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'configValue')
+    window.electron.ipcRenderer.once(
+      EVENT_VPN_DB_GET + '-configValue',
+      (_event: Event, arg: string) => {
+        getConfig(String(localStorage.getItem('username')), arg)
+      }
+    )
     setTitle(t('vpn.connect.title'))
     setNav([
       {
@@ -175,17 +195,17 @@ function VPN(): JSX.Element {
       }
     ])
     // 获取当前VPN状态
-    window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.status')
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'connectStatus.status')
     window.electron.ipcRenderer.once(
-      'vpnDbGet-connectStatus.status',
+      EVENT_VPN_DB_GET + '-connectStatus.status',
       (_event: Event, arg: boolean) => {
         // setSuccessStatus()
         console.log(arg)
         if (arg === true) {
           setSuccessStatus()
-          window.electron.ipcRenderer.send('vpnDbGet', 'connectStatus.connectIp')
+          window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'connectStatus.connectIp')
           window.electron.ipcRenderer.once(
-            'vpnDbGet-connectStatus.connectIp',
+            EVENT_VPN_DB_GET + '-connectStatus.connectIp',
             (_event: Event, arg: string) => {
               console.log(arg)
               setRemoteNetwork(arg)
@@ -195,22 +215,25 @@ function VPN(): JSX.Element {
           if (sessionStorage.getItem('proxyActive') === 'true') {
             setProxyActive(true)
           }
-          setConnectingUp(String(sessionStorage.getItem('network_traffic_out')))
-          setConnectingDown(String(sessionStorage.getItem('network_traffic_in')))
+          setConnectingUp(String(sessionStorage.getItem(EVENT_VPN_NETWORK_TRAFFIC_OUT)))
+          setConnectingDown(String(sessionStorage.getItem(EVENT_VPN_NETWORK_TRAFFIC_IN)))
         }
       }
     )
-    window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
-    window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'proxy')
+    window.electron.ipcRenderer.once(EVENT_VPN_DB_GET + '-proxy', (_event: Event, arg: string) => {
       console.log(arg)
       const m = !arg ? 'off' : arg
       console.log(m, connectProxyValue)
       setConnectProxyValue(m)
     })
-    window.electron.ipcRenderer.send('getLocalHostNetwork')
-    window.electron.ipcRenderer.once('setLocalHostNetwork', (_event: Event, arg: string) => {
-      setLocalNetwork(arg)
-    })
+    window.electron.ipcRenderer.send(EVENT_NETWORK_GET_LOCAL_HOST_NETWORK)
+    window.electron.ipcRenderer.once(
+      EVENT_NETWORK_SET_LOCAL_HOST_NETWORK,
+      (_event: Event, arg: string) => {
+        setLocalNetwork(arg)
+      }
+    )
     // }
     // })
   }, [])
@@ -261,7 +284,7 @@ function VPN(): JSX.Element {
    */
   const openvpnEventChange = () => {
     window.electron.ipcRenderer.on(
-      'openvpn_event',
+      EVENT_VPN_OPENVPN_EVENT,
       (_event: Event, event: string, value: string) => {
         console.log(openvpnStatusEvent, event, value)
         setOpenvpnStatusEvent(event)
@@ -278,18 +301,18 @@ function VPN(): JSX.Element {
    * 连接VPN
    */
   const connectVpn = () => {
-    window.electron.ipcRenderer.send('openvpn-start')
+    window.electron.ipcRenderer.send(EVENT_VPN_OPENVPN_START)
     // 发送设置当前链接中的状态
-    window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', true)
-    window.electron.ipcRenderer.once('init-start', () => {
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_SET, 'connectStatus.connecting', true)
+    window.electron.ipcRenderer.once(EVENT_VPN_INIT_START, () => {
       setInitLoading(true)
     })
-    window.electron.ipcRenderer.once('init-success', () => {
+    window.electron.ipcRenderer.once(EVENT_VPN_INIT_SUCCESS, () => {
       message.success(t('vpn.init.success'))
       setInitLoading(false)
       initVpnText()
     })
-    window.electron.ipcRenderer.once('init-error', (_event: Event, arg: any) => {
+    window.electron.ipcRenderer.once(EVENT_VPN_INIT_ERROR, (_event: Event, arg: any) => {
       message.error(t('vpn.init.error') + ': ' + arg)
       setInitLoading(false)
       initVpnText()
@@ -309,10 +332,10 @@ function VPN(): JSX.Element {
     /**
      * 监听后端的连接状态返回
      */
-    window.electron.ipcRenderer.once('openvpn-start-status', (_event: Event, arg: any) => {
+    window.electron.ipcRenderer.once(EVENT_VPN_OPENVPN_START_STATUS, (_event: Event, arg: any) => {
       const status = arg.status
       const remark = arg.remark
-      window.electron.ipcRenderer.send('vpnDbSet', 'connectStatus.connecting', false)
+      window.electron.ipcRenderer.send(EVENT_VPN_DB_SET, 'connectStatus.connecting', false)
       if (status == true) {
         // 计算从点击到完成的耗时
         localStorage.setItem(
@@ -330,7 +353,7 @@ function VPN(): JSX.Element {
         closeVpn()
       }
     })
-    window.electron.ipcRenderer.on('setConnectingLog', (_event: Event, arg: string) => {
+    window.electron.ipcRenderer.on(EVENT_VPN_SET_CONNECTING_LOG, (_event: Event, arg: string) => {
       setConnectingLog(arg)
     })
   }
@@ -343,29 +366,33 @@ function VPN(): JSX.Element {
     setTitle(t('vpn.connect.closeVpn'))
     setConnectingClass('connect-status')
     setConnectCLass('circle circle-success')
-    window.electron.ipcRenderer.removeAllListeners('init-success')
-    window.electron.ipcRenderer.removeAllListeners('init-error')
-    window.electron.ipcRenderer.removeAllListeners('init-start')
-    window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
-    window.electron.ipcRenderer.removeAllListeners('openvpn_event')
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_INIT_SUCCESS)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_INIT_ERROR)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_INIT_START)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_SET_CONNECTING_LOG)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_OPENVPN_EVENT)
     setConnectingStatus(false)
     intervalInit(false)
     setTimeout(() => {
       setTimeShow(false)
     }, 5000)
+    window.electron.ipcRenderer.once(EVENT_VPN_OPENVPN_COMPLETE_CLOSE, () => {
+      window.electron.ipcRenderer.send(EVENT_VPN_OPENVPN_CLOSE)
+      initVpnText()
+    })
     // setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
     setConnectingLog('')
-    window.electron.ipcRenderer.on('network_traffic_out', (_event: Event, arg: string) => {
-      sessionStorage.setItem('network_traffic_out', arg)
+    window.electron.ipcRenderer.on(EVENT_VPN_NETWORK_TRAFFIC_OUT, (_event: Event, arg: string) => {
+      sessionStorage.setItem(EVENT_VPN_NETWORK_TRAFFIC_OUT, arg)
       setConnectingUp(arg)
     })
-    window.electron.ipcRenderer.on('network_traffic_in', (_event: Event, arg: string) => {
-      sessionStorage.setItem('network_traffic_in', arg)
+    window.electron.ipcRenderer.on(EVENT_VPN_NETWORK_TRAFFIC_IN, (_event: Event, arg: string) => {
+      sessionStorage.setItem(EVENT_VPN_NETWORK_TRAFFIC_IN, arg)
       setConnectingDown(arg)
     })
     // setTimeConsuming(Number(localStorage.getItem('timeConsuming')))
-    window.electron.ipcRenderer.send('vpnDbGet', 'proxy')
-    window.electron.ipcRenderer.once('vpnDbGet-proxy', (_event: Event, arg: string) => {
+    window.electron.ipcRenderer.send(EVENT_VPN_DB_GET, 'proxy')
+    window.electron.ipcRenderer.once(EVENT_VPN_DB_GET + '-proxy', (_event: Event, arg: string) => {
       console.log(arg, !arg)
       setConnectProxyValue(() => (!arg ? 'off' : arg))
       proxyChange(arg)
@@ -382,8 +409,8 @@ function VPN(): JSX.Element {
   const closeVpn = () => {
     setTitle(t('vpn.connect.inTheClosed'))
     setConnectingClass(connectingClass + ' connect-status-ing')
-    window.electron.ipcRenderer.send('openvpn-close')
-    window.electron.ipcRenderer.once('complete_close', () => {
+    window.electron.ipcRenderer.send(EVENT_VPN_OPENVPN_CLOSE)
+    window.electron.ipcRenderer.once(EVENT_VPN_OPENVPN_COMPLETE_CLOSE, () => {
       initVpnText()
     })
   }
@@ -400,12 +427,12 @@ function VPN(): JSX.Element {
     setTimeShow(false)
     setConnectingStatus(false)
     intervalInit(false)
-    window.electron.ipcRenderer.removeAllListeners('setConnectingLog')
-    window.electron.ipcRenderer.removeAllListeners('openvpn-start-status')
-    window.electron.ipcRenderer.removeAllListeners('network_traffic_out')
-    window.electron.ipcRenderer.removeAllListeners('network_traffic_in')
-    window.electron.ipcRenderer.removeAllListeners('dont_init')
-    window.electron.ipcRenderer.removeAllListeners('openvpn_event')
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_SET_CONNECTING_LOG)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_OPENVPN_START_STATUS)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_NETWORK_TRAFFIC_OUT)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_NETWORK_TRAFFIC_IN)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_DONT_INIT)
+    window.electron.ipcRenderer.removeAllListeners(EVENT_VPN_OPENVPN_EVENT)
     setConnectingLog('')
     setRemoteNetwork('')
   }
@@ -435,7 +462,13 @@ function VPN(): JSX.Element {
     setConnectProxyValue(value)
     configs?.map((item: Config) => {
       if (item.configValue === useConfig) {
-        window.electron.ipcRenderer.send('change_proxy', value, item.pac, item.ip, item.port)
+        window.electron.ipcRenderer.send(
+          EVENT_VPN_CHANGE_PROXY,
+          value,
+          item.pac,
+          item.ip,
+          item.port
+        )
         return
       }
     })
@@ -446,7 +479,7 @@ function VPN(): JSX.Element {
    * @param url 连接
    */
   const openUrl = (url: string) => {
-    window.electron.ipcRenderer.send('open-url', url)
+    window.electron.ipcRenderer.send(EVENT_APP_OPEN_URL, url)
   }
   return (
     <div>
@@ -455,7 +488,7 @@ function VPN(): JSX.Element {
           <Space className="button">
             <Button
               type="primary"
-              onClick={(): void => window.electron.ipcRenderer.send('downloadLog')}
+              onClick={(): void => window.electron.ipcRenderer.send(EVENT_USER_DOWNLOAD_LOG)}
             >
               {t('vpn.downlog')}
             </Button>

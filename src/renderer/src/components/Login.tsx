@@ -5,6 +5,15 @@ import { Button, Checkbox, Divider, Form, Input, Modal, Spin } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { FieldData } from 'rc-field-form/lib/interface'
 import { CheckboxChangeEvent } from 'antd/lib/checkbox'
+import {
+  EVENT_SETTING_RELAUNCH,
+  EVENT_USER_GET_REMEMBER,
+  EVENT_USER_GET_USERNAME,
+  EVENT_USER_LOGIN,
+  EVENT_USER_LOGIN_ERROR,
+  EVENT_USER_LOGIN_SUCCESS,
+  EVENT_USER_SET_REMEMBER
+} from '../../../event'
 
 function Login(): JSX.Element {
   const [loginLoading, setLoginLoading] = useState(false)
@@ -15,9 +24,9 @@ function Login(): JSX.Element {
 
   const onFinish = (values: any): void => {
     setLoginLoading(true)
-    window.electron.ipcRenderer.send('login', values.username, values.password)
-    window.electron.ipcRenderer.once('login-success', (_event: Event, json: any) => {
-      window.electron.ipcRenderer.removeAllListeners('login-error')
+    window.electron.ipcRenderer.send(EVENT_USER_LOGIN, values.username, values.password)
+    window.electron.ipcRenderer.once(EVENT_USER_LOGIN_SUCCESS, (_event: Event, json: any) => {
+      window.electron.ipcRenderer.removeAllListeners(EVENT_USER_LOGIN_ERROR)
       localStorage.setItem('avatar', json.avatar)
       localStorage.setItem('username', json.ldapId)
       localStorage.setItem('name', json.name)
@@ -25,8 +34,8 @@ function Login(): JSX.Element {
       // 跳转到VPN的页面
       navigate('/vpn')
     })
-    window.electron.ipcRenderer.once('login-error', (_event: Event, error: any) => {
-      window.electron.ipcRenderer.removeAllListeners('login-success')
+    window.electron.ipcRenderer.once(EVENT_USER_LOGIN_ERROR, (_event: Event, error: any) => {
+      window.electron.ipcRenderer.removeAllListeners(EVENT_USER_LOGIN_SUCCESS)
       Modal.error({
         title: '登录失败',
         content: error
@@ -36,9 +45,9 @@ function Login(): JSX.Element {
   }
 
   useEffect(() => {
-    window.electron.ipcRenderer.send('getUsername')
+    window.electron.ipcRenderer.send(EVENT_USER_GET_USERNAME)
     window.electron.ipcRenderer.once(
-      'getUsername',
+      EVENT_USER_GET_USERNAME,
       (_event: Event, username: string, password: string) => {
         setFields([
           { name: 'username', value: username },
@@ -46,8 +55,8 @@ function Login(): JSX.Element {
         ])
       }
     )
-    window.electron.ipcRenderer.send('getRemember')
-    window.electron.ipcRenderer.once('getRemember', (_event, arg: boolean) => {
+    window.electron.ipcRenderer.send(EVENT_USER_GET_REMEMBER)
+    window.electron.ipcRenderer.once(EVENT_USER_GET_REMEMBER, (_event, arg: boolean) => {
       console.log(arg)
       setRemember(arg)
     })
@@ -64,7 +73,7 @@ function Login(): JSX.Element {
   const rememberMe = (e: CheckboxChangeEvent): void => {
     setRemember(e.target.checked)
     console.log(e.target.checked)
-    window.electron.ipcRenderer.send('setRemember', e.target.checked)
+    window.electron.ipcRenderer.send(EVENT_USER_SET_REMEMBER, e.target.checked)
   }
 
   /**
@@ -84,7 +93,7 @@ function Login(): JSX.Element {
               className="login__right__language"
               onClick={(): void => {
                 localStorage.setItem('localLanguage', 'zh')
-                window.electron.ipcRenderer.send('relaunch')
+                window.electron.ipcRenderer.send(EVENT_SETTING_RELAUNCH)
               }}
             >
               {localStorage.getItem('localLanguage') === 'zh' ? <strong>中文</strong> : '中文'}
@@ -94,7 +103,7 @@ function Login(): JSX.Element {
               className="login__right__language"
               onClick={(): void => {
                 localStorage.setItem('localLanguage', 'cn')
-                window.electron.ipcRenderer.send('relaunch')
+                window.electron.ipcRenderer.send(EVENT_SETTING_RELAUNCH)
               }}
             >
               {localStorage.getItem('localLanguage') === 'cn' ? (

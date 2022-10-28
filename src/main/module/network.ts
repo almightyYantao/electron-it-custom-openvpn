@@ -1,20 +1,25 @@
 import cmd, { ExecException } from 'child_process'
 import { ipcMain, IpcMainEvent } from 'electron'
+import {
+  EVENT_NETWORK_CHECK_LOCAL_HOST_NETWORK,
+  EVENT_NETWORK_GET_LOCAL_HOST_NETWORK,
+  EVENT_NETWORK_SET_LOCAL_HOST_NETWORK
+} from '../../event'
 import { xiaokuError } from '../common/log'
 
 /**
  * 获取本地网络
  */
-ipcMain.on('getLocalHostNetwork', (_event: IpcMainEvent) => {
+ipcMain.on(EVENT_NETWORK_GET_LOCAL_HOST_NETWORK, (_event: IpcMainEvent) => {
   localNetwork().then((result: string) => {
-    _event.sender.send('setLocalHostNetwork', result)
+    _event.sender.send(EVENT_NETWORK_SET_LOCAL_HOST_NETWORK, result)
   })
 })
 
 /**
  * 监听网络检测
  */
-ipcMain.on('checkLocalHostNetwork', (_event: IpcMainEvent, eventName: string) => {
+ipcMain.on(EVENT_NETWORK_CHECK_LOCAL_HOST_NETWORK, (_event: IpcMainEvent, eventName: string) => {
   let url = '10.1.1.1'
   switch (eventName) {
     case 'network':
@@ -34,7 +39,7 @@ ipcMain.on('checkLocalHostNetwork', (_event: IpcMainEvent, eventName: string) =>
   }
   pingNetwork(url).then((result: boolean) => {
     console.log(result)
-    _event.sender.send('checkLocalHostNetwork-' + eventName, result)
+    _event.sender.send(EVENT_NETWORK_CHECK_LOCAL_HOST_NETWORK + '-' + eventName, result)
   })
 })
 

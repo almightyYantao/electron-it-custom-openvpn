@@ -9,6 +9,24 @@ const { Telnet } = require('telnet-client')
 import { aesDecrypt } from '../common/decrypt'
 import { is } from '@electron-toolkit/utils'
 import { BASE, USER, VPN_ENUM } from '../common/enumeration'
+import {
+  EVENT_VPN_CHANGE_PROXY,
+  EVENT_VPN_DONT_INIT,
+  EVENT_VPN_INIT_CONFIG_LIST,
+  EVENT_VPN_INIT_ERROR,
+  EVENT_VPN_INIT_START,
+  EVENT_VPN_INIT_SUCCESS,
+  EVENT_VPN_INIT_VPN_CONFIG,
+  EVENT_VPN_NETWORK_TRAFFIC_IN,
+  EVENT_VPN_NETWORK_TRAFFIC_OUT,
+  EVENT_VPN_OPENVPN_CLOSE,
+  EVENT_VPN_OPENVPN_COMPLETE_CLOSE,
+  EVENT_VPN_OPENVPN_EVENT,
+  EVENT_VPN_OPENVPN_START,
+  EVENT_VPN_OPENVPN_START_STATUS,
+  EVENT_VPN_RELEASE_PORT,
+  EVENT_VPN_SUDO_DOWN_OPENVPN
+} from '../../event'
 const type = process.platform
 let connection: any
 let shell: cmd.ChildProcess
@@ -20,7 +38,7 @@ type OpenvpnStartStatus = {
 }
 
 ipcMain.on(
-  'change_proxy',
+  EVENT_VPN_CHANGE_PROXY,
   (_event: IpcMainEvent, proxy: string, pac: string, ip: string, port: string) => {
     proxy_change(proxy, pac, ip, port)
   }
@@ -29,24 +47,24 @@ ipcMain.on(
 /**
  * 监听VPN连接按钮
  */
-ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
+ipcMain.on(EVENT_VPN_OPENVPN_START, (_event: IpcMainEvent) => {
   //   checkPidIsActive(1000)
   if (is.dev) {
     startOpenvpn(_event)
       .then((result: OpenvpnStartStatus) => {
         console.log('openvpn-then')
-        _event.sender.send('openvpn-start-status', result)
+        _event.sender.send(EVENT_VPN_OPENVPN_START_STATUS, result)
         vpnDb.default.set(VPN_ENUM.CONNECT_STATUS, result).write()
       })
       .catch((err: OpenvpnStartStatus) => {
         console.log('openvpn-catch')
-        _event.sender.send('openvpn-start-status', err)
+        _event.sender.send(EVENT_VPN_OPENVPN_START_STATUS, err)
         vpnDb.default.set(VPN_ENUM.CONNECT_STATUS, false).write()
       })
   } else {
     if (vpnDb.default.get(VPN_ENUM.INT_VERSION).value() !== app.getVersion()) {
       if (process.platform === 'win32') {
-        _event.sender.send('init-start')
+        _event.sender.send(EVENT_VPN_INIT_START)
         const result = cmd.execSync(`ipconfig /all | findStr "TAP-Windows\\ Adapter\\ V9"`)
         if (!result) {
           const tapSsh = `"${path.join(
@@ -55,40 +73,40 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
           )}" /S`
           try {
             cmd.execSync(tapSsh)
-            _event.sender.send('init-success')
+            _event.sender.send(EVENT_VPN_INIT_SUCCESS)
             vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
           } catch (e) {
             xiaokuError(`初始化失败：${e}`)
-            _event.sender.send('init-error', e)
+            _event.sender.send(EVENT_VPN_INIT_ERROR, e)
           }
           return
         } else {
-          _event.sender.send('init-success')
+          _event.sender.send(EVENT_VPN_INIT_SUCCESS)
           vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
           return
         }
       } else {
-        _event.sender.send('init-start')
+        _event.sender.send(EVENT_VPN_INIT_START)
         console.log(app.getVersion())
         initOpenvpn()
           .then(() => {
-            _event.sender.send('init-success')
+            _event.sender.send(EVENT_VPN_INIT_SUCCESS)
             vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
           })
           .catch((err) => {
             xiaokuError(`初始化失败：${err}`)
-            _event.sender.send('init-error', err)
+            _event.sender.send(EVENT_VPN_INIT_ERROR, err)
           })
       }
     } else {
-      _event.sender.send('dont_init')
+      _event.sender.send(EVENT_VPN_DONT_INIT)
       startOpenvpn(_event)
         .then((result: OpenvpnStartStatus) => {
-          _event.sender.send('openvpn-start-status', result)
+          _event.sender.send(EVENT_VPN_OPENVPN_START_STATUS, result)
           vpnDb.default.set(VPN_ENUM.CONNECT_STATUS, result).write()
         })
         .catch((err: OpenvpnStartStatus) => {
-          _event.sender.send('openvpn-start-status', err)
+          _event.sender.send(EVENT_VPN_OPENVPN_START_STATUS, err)
           vpnDb.default.set(VPN_ENUM.CONNECT_STATUS, false).write()
         })
     }
@@ -98,26 +116,26 @@ ipcMain.on('openvpn-start', (_event: IpcMainEvent) => {
 /**
  * 初始化
  */
-ipcMain.on('initVpnConfig', (_event: IpcMainEvent) => {
+ipcMain.on(EVENT_VPN_INIT_VPN_CONFIG, (_event: IpcMainEvent) => {
   if (process.platform === 'darwin') {
     initOpenvpn()
       .then(() => {
-        _event.sender.send('init-success')
+        _event.sender.send(EVENT_VPN_INIT_SUCCESS)
         vpnDb.default.set(VPN_ENUM.INT_VERSION, app.getVersion()).value()
       })
       .catch((err) => {
         xiaokuError(`初始化失败：${err}`)
-        _event.sender.send('init-error', err)
+        _event.sender.send(EVENT_VPN_INIT_ERROR, err)
       })
   } else {
-    _event.sender.send('init-success')
+    _event.sender.send(EVENT_VPN_INIT_SUCCESS)
   }
 })
 
 /**
  * 监听VPN断开按钮
  */
-ipcMain.on('openvpn-close', (_event: IpcMainEvent) => {
+ipcMain.on(EVENT_VPN_OPENVPN_CLOSE, (_event: IpcMainEvent) => {
   // 先判断shell存不存在，不存在的话说明没运行过，但是他的状态又是true，那么直接至为false
   console.log('shell', shell, 'pid', shell?.pid)
   if (shell?.pid) {
@@ -132,7 +150,7 @@ ipcMain.on('openvpn-close', (_event: IpcMainEvent) => {
       })
       .catch(() => {
         // complete_close
-        _event.sender.send('complete_close')
+        _event.sender.send(EVENT_VPN_OPENVPN_COMPLETE_CLOSE)
         vpnDb.default.set(VPN_ENUM.CONNECT_STATUS_STATUS, false).write()
       })
   } else {
@@ -145,9 +163,9 @@ ipcMain.on('openvpn-close', (_event: IpcMainEvent) => {
 /**
  * 释放端口，其实也是强制使用管理员方式来断开VPN，不管VPN进程是否存在
  */
-ipcMain.on('releasePort', (_event: IpcMainEvent) => {
+ipcMain.on(EVENT_VPN_RELEASE_PORT, (_event: IpcMainEvent) => {
   releasePort().then(() => {
-    _event.sender.send('sudo_down_vpn_success')
+    _event.sender.send(EVENT_VPN_SUDO_DOWN_OPENVPN)
   })
 })
 
@@ -260,12 +278,15 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
     // 监听进程关闭事件
     shell.once('close', (code: number, signal: NodeJS.Signals) => {
       const error = `Openvpn进程关闭: ${code},signal: ${signal}`
-      xiaokuError(error)
+      xiaokuDebug(error)
       if (code !== 0 && code !== null) {
         _reject({ status: false, remark: error })
         return
       }
-      _event.sender.send('complete_close')
+      // 如果是正常关闭，或者被强制关闭，那么就触发一次确认关闭的消息，并且清理DNS和确认没有连接
+      _event.sender.send(EVENT_VPN_OPENVPN_COMPLETE_CLOSE)
+      vpnDb.default.set(VPN_ENUM.CONNECT_STATUS_STATUS, false).write()
+      cleanDns()
     })
 
     // 监听进程输出事件
@@ -273,9 +294,6 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
       // 判断是否启动完成management
       console.log(data)
       xiaokuOpenvpnConnectLog(data, vpnDb.default.get(VPN_ENUM.CONFIG_VALUE).value())
-      // setConnectingLog
-      // _event.sender.send('setConnectingLog', data)
-      //   global.mainWindow.webContents.send('setConnectingLog', data)
       if (data.indexOf('Need hold release from management interface') !== -1) {
         // 发现Openvpn开始接入management了，那么启动数据转发
         const syncUsername = db.get(USER.USER_USERNAME).value()
@@ -298,7 +316,7 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
         // subIndex = subIndex.replace('MANAGEMENT: >STATE:', '');
         // 启动完成后进行数据分割，判断是否连接成功或者失败
         const mg = data.substring(subIndex).split(',')
-        _event.sender.send('openvpn_event', mg[1], mg[2])
+        _event.sender.send(EVENT_VPN_OPENVPN_EVENT, mg[1], mg[2])
         xiaokuInfo(`openvpn_event: ${mg[1]} - ${mg[2]}`)
         if (mg[2] === 'init_instance') {
           cleanDns()
@@ -321,7 +339,7 @@ function startOpenvpn(_event: IpcMainEvent): Promise<OpenvpnStartStatus> {
  */
 function cleanDns(): void {
   if (process.platform === 'darwin') {
-    const shellCmd = `"/Library/Application Support/xiaoku-app/macos/proxy_xiaoku_helper" -d ""`
+    const shellCmd = `"/Library/Application Support/xiaoku-app/macos/proxy_xiaoku_helper" -m dns -d ""`
     cmd.exec(shellCmd, (error, stdout, stderr) => {
       if (error || stderr) {
         xiaokuError(`error: ${error},stderr: ${stderr}`)
@@ -489,8 +507,8 @@ function connectOpenVPNSocket(
       data = String(data).replace('>BYTECOUNT:', '')
       networkIn = Number(data.split(',')[0]) - oldNetworkIn
       networkOut = Number(data.split(',')[1]) - oldNetworkOut
-      global.mainWindow.webContents.send('network_traffic_in', fomartNetwork(networkIn))
-      global.mainWindow.webContents.send('network_traffic_out', fomartNetwork(networkOut))
+      global.mainWindow.webContents.send(EVENT_VPN_NETWORK_TRAFFIC_IN, fomartNetwork(networkIn))
+      global.mainWindow.webContents.send(EVENT_VPN_NETWORK_TRAFFIC_OUT, fomartNetwork(networkOut))
       oldNetworkIn = Number(data.split(',')[0])
       oldNetworkOut = Number(data.split(',')[1])
     }
@@ -582,10 +600,10 @@ function proxy_change(arg: string, pac: string, ip: string, port: string): void 
   })
 }
 
-ipcMain.on('initConfigList', (_event: IpcMainEvent, configs: any) => {
+ipcMain.on(EVENT_VPN_INIT_CONFIG_LIST, (_event: IpcMainEvent, configs: any) => {
   initConfigList(configs)
     .then((result: any) => {
-      _event.sender.send('initConfigList', result)
+      _event.sender.send(EVENT_VPN_INIT_CONFIG_LIST, result)
     })
     .catch((err) => {
       xiaokuError(err)
