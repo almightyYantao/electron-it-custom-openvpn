@@ -5,6 +5,7 @@
     "src/main/*",
     "src/main/common/*",
     "src/main/module/*",
+    "src/main/plugin/*",
     "src/main/store/*",
     "src/preload/*",
     "src/event.ts"

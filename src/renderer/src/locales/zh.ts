@@ -35,7 +35,8 @@ export default {
     vpn: 'VPN',
     soft: '软件库',
     tools: '工具箱',
-    setting: '设置'
+    setting: '设置',
+    plugin: '插件中心'
   },
   vpn: {
     downlog: '下载日志',

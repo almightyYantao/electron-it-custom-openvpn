@@ -35,7 +35,8 @@ export default {
     vpn: 'VPN',
     soft: 'Soft',
     tools: 'Tools',
-    setting: 'Setting'
+    setting: 'Setting',
+    plugin: 'Plugin'
   },
   vpn: {
     downlog: 'DownLog',

@@ -9,6 +9,8 @@ import Soft from './components/child/Soft'
 import Tools from './components/child/Tools'
 import Setting from './components/child/Setting'
 import Login from './components/Login'
+import Plugin from './components/child/Plugin'
+import PluginAppWindows from '../plugin/pluginAppWindow'
 
 function App(): JSX.Element {
   /**
@@ -31,13 +33,15 @@ function App(): JSX.Element {
       <ConfigProvider>
         <HashRouter>
           <Routes>
-            <Route index element={<Login />} />
+            <Route element={<Login />} />
             <Route path="/vpn" element={<Container />}>
               <Route index path="/vpn" element={<VPN />} />
               <Route path="/vpn/soft" element={<Soft />} />
               <Route path="/vpn/tools" element={<Tools />} />
               <Route path="/vpn/setting" element={<Setting />} />
+              <Route path="/vpn/plugin" element={<Plugin />} />
             </Route>
+            <Route index element={<PluginAppWindows />} />
           </Routes>
         </HashRouter>
       </ConfigProvider>

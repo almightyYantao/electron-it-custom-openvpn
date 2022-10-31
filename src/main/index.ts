@@ -1,4 +1,13 @@
-import { app, shell, BrowserWindow, Menu, Tray, ipcMain, powerSaveBlocker } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  Menu,
+  Tray,
+  ipcMain,
+  powerSaveBlocker,
+  globalShortcut
+} from 'electron'
 import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 require('@electron/remote/main').initialize()
@@ -9,6 +18,7 @@ import './module/soft'
 import './module/printer'
 import './module/setting'
 import './common/login'
+import createPluginWindow from './plugin/window'
 
 import db from './store/config'
 import * as vpnDb from './store/vpn'
@@ -23,6 +33,7 @@ import {
 import { xiaokuError } from './common/log'
 
 global.mainWindow = null
+global.pluginWindow = null
 function createWindow(): void {
   // Create the browser window.
   global.mainWindow = new BrowserWindow({
@@ -66,9 +77,13 @@ function createWindow(): void {
 
   powerSaveBlocker.start('prevent-app-suspension')
 
-  // globalShortcut.register('F12', function () {
-  //   global.mainWindow.webContents.openDevTools()
-  // })
+  globalShortcut.register('F9', function () {
+    if (global.pluginWindow === null) {
+      createPluginWindow()
+    } else {
+      global.pluginWindow.show()
+    }
+  })
 
   Menu.setApplicationMenu(null)
   updateHandle()

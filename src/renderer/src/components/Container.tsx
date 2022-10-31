@@ -30,7 +30,7 @@ window.addEventListener('DOMContentLoaded', function onDOMContentLoaded() {
 function Container(): JSX.Element {
   const location = useLocation()
   const navigate = useNavigate()
-  const [locaMap] = useState(['/vpn', '/vpn/soft', '/vpn/tools', '/vpn/setting'])
+  const [locaMap] = useState(['/vpn', '/vpn/soft', '/vpn/tools', '/vpn/setting', '/vpn/plugin'])
   const [checkedMap, setCheckedMap] = useState({})
   const [badgeUpdate, setBadgeUpdate] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -237,6 +237,19 @@ function Container(): JSX.Element {
             <label htmlFor="left-nav-4" className="left-nav__4">
               <IconFont type="iconshezhi" />
               <span className="left-nav-strong">{t('menu.setting')}</span>
+            </label>
+            <input
+              id="left-nav-5"
+              className="left-nav__radio"
+              type="radio"
+              name="left-nav"
+              value="4"
+              checked={checkedMap[4]}
+              onChange={() => onInputRadio(4)}
+            />
+            <label htmlFor="left-nav-5" className="left-nav__5">
+              <IconFont type="iconshezhi" />
+              <span className="left-nav-strong">{t('menu.plugin')}</span>
             </label>
           </div>
           <div className="left-nav__active"></div>
